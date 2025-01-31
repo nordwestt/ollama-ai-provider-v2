@@ -589,7 +589,7 @@ export class OllamaChatLanguageModel implements LanguageModelV1 {
             console.log("Reached here 5");
 
             if(value.done){
-              finishReason = mapOllamaFinishReason("other");
+              finishReason = mapOllamaFinishReason(value.done_reason);
               usage = {
                 promptTokens: value.prompt_eval_count || 0,
                 completionTokens: value.eval_count ?? undefined,
@@ -814,6 +814,7 @@ const ollamaChatChunkSchema = z.discriminatedUnion('done',[
   z.object({
     created_at: z.string(),
     done: z.literal(true),
+    done_reason: z.string(),
     eval_count: z.number(),
     eval_duration: z.number(),
     load_duration: z.number().optional(),
