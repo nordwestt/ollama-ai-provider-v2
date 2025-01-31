@@ -210,6 +210,8 @@ export class OllamaCompletionLanguageModel implements LanguageModelV1 {
   ): Promise<Awaited<ReturnType<LanguageModelV1['doStream']>>> {
     const { args, warnings } = this.getArgs(options);
 
+    console.log("We're debugging!!!")
+
     const body = {
       ...args,
       stream: true,

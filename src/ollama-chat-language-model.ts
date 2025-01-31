@@ -439,6 +439,7 @@ export class OllamaChatLanguageModel implements LanguageModelV1 {
   async doStream(
     options: Parameters<LanguageModelV1['doStream']>[0],
   ): Promise<Awaited<ReturnType<LanguageModelV1['doStream']>>> {
+    console.log("Nowwww we're debugging!", this.settings);
     if (
       this.settings.simulateStreaming ??
       isStreamingSimulatedByDefault(this.modelId)
@@ -542,6 +543,7 @@ export class OllamaChatLanguageModel implements LanguageModelV1 {
     const { useLegacyFunctionCalling } = this.settings;
 
     const providerMetadata: LanguageModelV1ProviderMetadata = { ollama: {} };
+    console.log("Reached here 1");
 
     return {
       stream: response.pipeThrough(
@@ -551,11 +553,13 @@ export class OllamaChatLanguageModel implements LanguageModelV1 {
         >({
           transform(chunk, controller) {
             // handle failed chunk parsing / validation:
+            console.log("Reached here 2");
             if (!chunk.success) {
               finishReason = 'error';
               controller.enqueue({ type: 'error', error: chunk.error });
               return;
             }
+            console.log("Reached here 3");
 
             const value = chunk.value;
 
@@ -563,6 +567,7 @@ export class OllamaChatLanguageModel implements LanguageModelV1 {
             if ('error' in value) {
               finishReason = 'error';
               controller.enqueue({ type: 'error', error: value.error });
+              console.log("Reached here 4");
               return;
             }
 
@@ -574,6 +579,8 @@ export class OllamaChatLanguageModel implements LanguageModelV1 {
                 ...getResponseMetadata(value),
               });
             }
+
+            console.log("Reached here 5");
 
             if(value?.done){
               finishReason = mapOllamaFinishReason("other");
