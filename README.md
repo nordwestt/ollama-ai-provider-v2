@@ -1,36 +1,36 @@
-# AI SDK - OpenAI Provider
+# AI SDK - Ollama Provider
 
-The **[OpenAI provider](https://sdk.vercel.ai/providers/ai-sdk-providers/openai)** for the [AI SDK](https://sdk.vercel.ai/docs)
-contains language model support for the OpenAI chat and completion APIs and embedding model support for the OpenAI embeddings API.
+The **[Ollama provider](https://sdk.vercel.ai/providers/ai-sdk-providers/ollama)** for the [AI SDK](https://sdk.vercel.ai/docs)
+contains language model support for the Ollama chat and completion APIs and embedding model support for the Ollama embeddings API.
 
 ## Setup
 
-The OpenAI provider is available in the `@ai-sdk/openai` module. You can install it with
+The Ollama provider is available in the `@ai-sdk/ollama` module. You can install it with
 
 ```bash
-npm i @ai-sdk/openai
+npm i @ai-sdk/ollama
 ```
 
 ## Provider Instance
 
-You can import the default provider instance `openai` from `@ai-sdk/openai`:
+You can import the default provider instance `ollama` from `@ai-sdk/ollama`:
 
 ```ts
-import { openai } from '@ai-sdk/openai';
+import { ollama } from '@ai-sdk/ollama';
 ```
 
 ## Example
 
 ```ts
-import { openai } from '@ai-sdk/openai';
+import { ollama } from '@ai-sdk/ollama';
 import { generateText } from 'ai';
 
 const { text } = await generateText({
-  model: openai('gpt-4-turbo'),
+  model: ollama('gpt-4-turbo'),
   prompt: 'Write a vegetarian lasagna recipe for 4 people.',
 });
 ```
 
 ## Documentation
 
-Please check out the **[OpenAI provider documentation](https://sdk.vercel.ai/providers/ai-sdk-providers/openai)** for more information.
+Please check out the **[Ollama provider documentation](https://sdk.vercel.ai/providers/ai-sdk-providers/ollama)** for more information.

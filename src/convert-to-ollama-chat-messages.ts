@@ -3,9 +3,9 @@ import {
   UnsupportedFunctionalityError,
 } from '@ai-sdk/provider';
 import { convertUint8ArrayToBase64 } from '@ai-sdk/provider-utils';
-import { OpenAIChatPrompt } from './openai-chat-prompt';
+import { OllamaChatPrompt } from './ollama-chat-prompt';
 
-export function convertToOpenAIChatMessages({
+export function convertToOllamaChatMessages({
   prompt,
   useLegacyFunctionCalling = false,
   systemMessageMode = 'system',
@@ -13,8 +13,8 @@ export function convertToOpenAIChatMessages({
   prompt: LanguageModelV1Prompt;
   useLegacyFunctionCalling?: boolean;
   systemMessageMode?: 'system' | 'developer' | 'remove';
-}): OpenAIChatPrompt {
-  const messages: OpenAIChatPrompt = [];
+}): OllamaChatPrompt {
+  const messages: OllamaChatPrompt = [];
 
   for (const { role, content } of prompt) {
     switch (role) {
@@ -65,8 +65,8 @@ export function convertToOpenAIChatMessages({
                             part.mimeType ?? 'image/jpeg'
                           };base64,${convertUint8ArrayToBase64(part.image)}`,
 
-                    // OpenAI specific extension: image detail
-                    detail: part.providerMetadata?.openai?.imageDetail,
+                    // Ollama specific extension: image detail
+                    detail: part.providerMetadata?.ollama?.imageDetail,
                   },
                 };
               }

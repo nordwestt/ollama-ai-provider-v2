@@ -19,18 +19,18 @@ import {
   postJsonToApi,
 } from '@ai-sdk/provider-utils';
 import { z } from 'zod';
-import { convertToOpenAIChatMessages } from './convert-to-openai-chat-messages';
-import { mapOpenAIChatLogProbsOutput } from './map-openai-chat-logprobs';
-import { mapOpenAIFinishReason } from './map-openai-finish-reason';
-import { OpenAIChatModelId, OpenAIChatSettings } from './openai-chat-settings';
+import { convertToOllamaChatMessages } from './convert-to-ollama-chat-messages';
+import { mapOllamaChatLogProbsOutput } from './map-ollama-chat-logprobs';
+import { mapOllamaFinishReason } from './map-ollama-finish-reason';
+import { OllamaChatModelId, OllamaChatSettings } from './ollama-chat-settings';
 import {
-  openaiErrorDataSchema,
-  openaiFailedResponseHandler,
-} from './openai-error';
+  ollamaErrorDataSchema,
+  ollamaFailedResponseHandler,
+} from './ollama-error';
 import { getResponseMetadata } from './get-response-metadata';
-import { prepareTools } from './openai-prepare-tools';
+import { prepareTools } from './ollama-prepare-tools';
 
-type OpenAIChatConfig = {
+type OllamaChatConfig = {
   provider: string;
   compatibility: 'strict' | 'compatible';
   headers: () => Record<string, string | undefined>;
@@ -38,18 +38,18 @@ type OpenAIChatConfig = {
   fetch?: FetchFunction;
 };
 
-export class OpenAIChatLanguageModel implements LanguageModelV1 {
+export class OllamaChatLanguageModel implements LanguageModelV1 {
   readonly specificationVersion = 'v1';
 
-  readonly modelId: OpenAIChatModelId;
-  readonly settings: OpenAIChatSettings;
+  readonly modelId: OllamaChatModelId;
+  readonly settings: OllamaChatSettings;
 
-  private readonly config: OpenAIChatConfig;
+  private readonly config: OllamaChatConfig;
 
   constructor(
-    modelId: OpenAIChatModelId,
-    settings: OpenAIChatSettings,
-    config: OpenAIChatConfig,
+    modelId: OllamaChatModelId,
+    settings: OllamaChatSettings,
+    config: OllamaChatConfig,
   ) {
     this.modelId = modelId;
     this.settings = settings;
@@ -188,18 +188,18 @@ export class OpenAIChatLanguageModel implements LanguageModelV1 {
       stop: stopSequences,
       seed,
 
-      // openai specific settings:
+      // ollama specific settings:
       // TODO remove in next major version; we auto-map maxTokens now
-      max_completion_tokens: providerMetadata?.openai?.maxCompletionTokens,
-      store: providerMetadata?.openai?.store,
-      metadata: providerMetadata?.openai?.metadata,
-      prediction: providerMetadata?.openai?.prediction,
+      max_completion_tokens: providerMetadata?.ollama?.maxCompletionTokens,
+      store: providerMetadata?.ollama?.store,
+      metadata: providerMetadata?.ollama?.metadata,
+      prediction: providerMetadata?.ollama?.prediction,
       reasoning_effort:
-        providerMetadata?.openai?.reasoningEffort ??
+        providerMetadata?.ollama?.reasoningEffort ??
         this.settings.reasoningEffort,
 
       // messages:
-      messages: convertToOpenAIChatMessages({
+      messages: convertToOllamaChatMessages({
         prompt,
         useLegacyFunctionCalling,
         systemMessageMode: getSystemMessageMode(this.modelId),
@@ -208,7 +208,7 @@ export class OpenAIChatLanguageModel implements LanguageModelV1 {
 
     if (isReasoningModel(this.modelId)) {
       // remove unsupported settings for reasoning models
-      // see https://platform.openai.com/docs/guides/reasoning#limitations
+      // see https://platform.ollama.com/docs/guides/reasoning#limitations
       if (baseArgs.temperature != null) {
         baseArgs.temperature = undefined;
         warnings.push({
@@ -371,9 +371,9 @@ export class OpenAIChatLanguageModel implements LanguageModelV1 {
       }),
       headers: combineHeaders(this.config.headers(), options.headers),
       body,
-      failedResponseHandler: openaiFailedResponseHandler,
+      failedResponseHandler: ollamaFailedResponseHandler,
       successfulResponseHandler: createJsonResponseHandler(
-        openaiChatResponseSchema,
+        ollamaChatResponseSchema,
       ),
       abortSignal: options.abortSignal,
       fetch: this.config.fetch,
@@ -385,21 +385,21 @@ export class OpenAIChatLanguageModel implements LanguageModelV1 {
     // provider metadata:
     const completionTokenDetails = response.usage?.completion_tokens_details;
     const promptTokenDetails = response.usage?.prompt_tokens_details;
-    const providerMetadata: LanguageModelV1ProviderMetadata = { openai: {} };
+    const providerMetadata: LanguageModelV1ProviderMetadata = { ollama: {} };
     if (completionTokenDetails?.reasoning_tokens != null) {
-      providerMetadata.openai.reasoningTokens =
+      providerMetadata.ollama.reasoningTokens =
         completionTokenDetails?.reasoning_tokens;
     }
     if (completionTokenDetails?.accepted_prediction_tokens != null) {
-      providerMetadata.openai.acceptedPredictionTokens =
+      providerMetadata.ollama.acceptedPredictionTokens =
         completionTokenDetails?.accepted_prediction_tokens;
     }
     if (completionTokenDetails?.rejected_prediction_tokens != null) {
-      providerMetadata.openai.rejectedPredictionTokens =
+      providerMetadata.ollama.rejectedPredictionTokens =
         completionTokenDetails?.rejected_prediction_tokens;
     }
     if (promptTokenDetails?.cached_tokens != null) {
-      providerMetadata.openai.cachedPromptTokens =
+      providerMetadata.ollama.cachedPromptTokens =
         promptTokenDetails?.cached_tokens;
     }
 
@@ -421,7 +421,7 @@ export class OpenAIChatLanguageModel implements LanguageModelV1 {
               toolName: toolCall.function.name,
               args: toolCall.function.arguments!,
             })),
-      finishReason: mapOpenAIFinishReason(choice.finish_reason),
+      finishReason: mapOllamaFinishReason(choice.finish_reason),
       usage: {
         promptTokens: response.usage?.prompt_tokens ?? NaN,
         completionTokens: response.usage?.completion_tokens ?? NaN,
@@ -431,7 +431,7 @@ export class OpenAIChatLanguageModel implements LanguageModelV1 {
       request: { body: JSON.stringify(body) },
       response: getResponseMetadata(response),
       warnings,
-      logprobs: mapOpenAIChatLogProbsOutput(choice.logprobs),
+      logprobs: mapOllamaChatLogProbsOutput(choice.logprobs),
       providerMetadata,
     };
   }
@@ -508,9 +508,9 @@ export class OpenAIChatLanguageModel implements LanguageModelV1 {
       }),
       headers: combineHeaders(this.config.headers(), options.headers),
       body,
-      failedResponseHandler: openaiFailedResponseHandler,
+      failedResponseHandler: ollamaFailedResponseHandler,
       successfulResponseHandler: createEventSourceResponseHandler(
-        openaiChatChunkSchema,
+        ollamaChatChunkSchema,
       ),
       abortSignal: options.abortSignal,
       fetch: this.config.fetch,
@@ -541,12 +541,12 @@ export class OpenAIChatLanguageModel implements LanguageModelV1 {
 
     const { useLegacyFunctionCalling } = this.settings;
 
-    const providerMetadata: LanguageModelV1ProviderMetadata = { openai: {} };
+    const providerMetadata: LanguageModelV1ProviderMetadata = { ollama: {} };
 
     return {
       stream: response.pipeThrough(
         new TransformStream<
-          ParseResult<z.infer<typeof openaiChatChunkSchema>>,
+          ParseResult<z.infer<typeof ollamaChatChunkSchema>>,
           LanguageModelV1StreamPart
         >({
           transform(chunk, controller) {
@@ -589,23 +589,23 @@ export class OpenAIChatLanguageModel implements LanguageModelV1 {
               };
 
               if (completion_tokens_details?.reasoning_tokens != null) {
-                providerMetadata.openai.reasoningTokens =
+                providerMetadata.ollama.reasoningTokens =
                   completion_tokens_details?.reasoning_tokens;
               }
               if (
                 completion_tokens_details?.accepted_prediction_tokens != null
               ) {
-                providerMetadata.openai.acceptedPredictionTokens =
+                providerMetadata.ollama.acceptedPredictionTokens =
                   completion_tokens_details?.accepted_prediction_tokens;
               }
               if (
                 completion_tokens_details?.rejected_prediction_tokens != null
               ) {
-                providerMetadata.openai.rejectedPredictionTokens =
+                providerMetadata.ollama.rejectedPredictionTokens =
                   completion_tokens_details?.rejected_prediction_tokens;
               }
               if (prompt_tokens_details?.cached_tokens != null) {
-                providerMetadata.openai.cachedPromptTokens =
+                providerMetadata.ollama.cachedPromptTokens =
                   prompt_tokens_details?.cached_tokens;
               }
             }
@@ -613,7 +613,7 @@ export class OpenAIChatLanguageModel implements LanguageModelV1 {
             const choice = value.choices[0];
 
             if (choice?.finish_reason != null) {
-              finishReason = mapOpenAIFinishReason(choice.finish_reason);
+              finishReason = mapOllamaFinishReason(choice.finish_reason);
             }
 
             if (choice?.delta == null) {
@@ -629,7 +629,7 @@ export class OpenAIChatLanguageModel implements LanguageModelV1 {
               });
             }
 
-            const mappedLogprobs = mapOpenAIChatLogProbsOutput(
+            const mappedLogprobs = mapOllamaChatLogProbsOutput(
               choice?.logprobs,
             );
             if (mappedLogprobs?.length) {
@@ -653,7 +653,7 @@ export class OpenAIChatLanguageModel implements LanguageModelV1 {
               for (const toolCallDelta of mappedToolCalls) {
                 const index = toolCallDelta.index;
 
-                // Tool call start. OpenAI returns all information except the arguments in the first chunk.
+                // Tool call start. Ollama returns all information except the arguments in the first chunk.
                 if (toolCalls[index] == null) {
                   if (toolCallDelta.type !== 'function') {
                     throw new InvalidResponseDataError({
@@ -782,7 +782,7 @@ export class OpenAIChatLanguageModel implements LanguageModelV1 {
   }
 }
 
-const openaiTokenUsageSchema = z
+const ollamaTokenUsageSchema = z
   .object({
     prompt_tokens: z.number().nullish(),
     completion_tokens: z.number().nullish(),
@@ -803,7 +803,7 @@ const openaiTokenUsageSchema = z
 
 // limited version of the schema, focussed on what is needed for the implementation
 // this approach limits breakages when the API changes and increases efficiency
-const openaiChatResponseSchema = z.object({
+const ollamaChatResponseSchema = z.object({
   id: z.string().nullish(),
   created: z.number().nullish(),
   model: z.string().nullish(),
@@ -853,12 +853,12 @@ const openaiChatResponseSchema = z.object({
       finish_reason: z.string().nullish(),
     }),
   ),
-  usage: openaiTokenUsageSchema,
+  usage: ollamaTokenUsageSchema,
 });
 
 // limited version of the schema, focussed on what is needed for the implementation
 // this approach limits breakages when the API changes and increases efficiency
-const openaiChatChunkSchema = z.union([
+const ollamaChatChunkSchema = z.union([
   z.object({
     id: z.string().nullish(),
     created: z.number().nullish(),
@@ -912,9 +912,9 @@ const openaiChatChunkSchema = z.union([
         index: z.number(),
       }),
     ),
-    usage: openaiTokenUsageSchema,
+    usage: ollamaTokenUsageSchema,
   }),
-  openaiErrorDataSchema,
+  ollamaErrorDataSchema,
 ]);
 
 function isReasoningModel(modelId: string) {

@@ -1,12 +1,12 @@
 import { z } from 'zod';
 import { createJsonErrorResponseHandler } from '@ai-sdk/provider-utils';
 
-export const openaiErrorDataSchema = z.object({
+export const ollamaErrorDataSchema = z.object({
   error: z.object({
     message: z.string(),
 
     // The additional information below is handled loosely to support
-    // OpenAI-compatible providers that have slightly different error
+    // Ollama-compatible providers that have slightly different error
     // responses:
     type: z.string().nullish(),
     param: z.any().nullish(),
@@ -14,9 +14,9 @@ export const openaiErrorDataSchema = z.object({
   }),
 });
 
-export type OpenAIErrorData = z.infer<typeof openaiErrorDataSchema>;
+export type OllamaErrorData = z.infer<typeof ollamaErrorDataSchema>;
 
-export const openaiFailedResponseHandler = createJsonErrorResponseHandler({
-  errorSchema: openaiErrorDataSchema,
+export const ollamaFailedResponseHandler = createJsonErrorResponseHandler({
+  errorSchema: ollamaErrorDataSchema,
   errorToMessage: data => data.error.message,
 });

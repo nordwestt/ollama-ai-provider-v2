@@ -15,20 +15,20 @@ import {
   postJsonToApi,
 } from '@ai-sdk/provider-utils';
 import { z } from 'zod';
-import { convertToOpenAICompletionPrompt } from './convert-to-openai-completion-prompt';
-import { mapOpenAICompletionLogProbs } from './map-openai-completion-logprobs';
-import { mapOpenAIFinishReason } from './map-openai-finish-reason';
+import { convertToOllamaCompletionPrompt } from './convert-to-ollama-completion-prompt';
+import { mapOllamaCompletionLogProbs } from './map-ollama-completion-logprobs';
+import { mapOllamaFinishReason } from './map-ollama-finish-reason';
 import {
-  OpenAICompletionModelId,
-  OpenAICompletionSettings,
-} from './openai-completion-settings';
+  OllamaCompletionModelId,
+  OllamaCompletionSettings,
+} from './ollama-completion-settings';
 import {
-  openaiErrorDataSchema,
-  openaiFailedResponseHandler,
-} from './openai-error';
+  ollamaErrorDataSchema,
+  ollamaFailedResponseHandler,
+} from './ollama-error';
 import { getResponseMetadata } from './get-response-metadata';
 
-type OpenAICompletionConfig = {
+type OllamaCompletionConfig = {
   provider: string;
   compatibility: 'strict' | 'compatible';
   headers: () => Record<string, string | undefined>;
@@ -36,19 +36,19 @@ type OpenAICompletionConfig = {
   fetch?: FetchFunction;
 };
 
-export class OpenAICompletionLanguageModel implements LanguageModelV1 {
+export class OllamaCompletionLanguageModel implements LanguageModelV1 {
   readonly specificationVersion = 'v1';
   readonly defaultObjectGenerationMode = undefined;
 
-  readonly modelId: OpenAICompletionModelId;
-  readonly settings: OpenAICompletionSettings;
+  readonly modelId: OllamaCompletionModelId;
+  readonly settings: OllamaCompletionSettings;
 
-  private readonly config: OpenAICompletionConfig;
+  private readonly config: OllamaCompletionConfig;
 
   constructor(
-    modelId: OpenAICompletionModelId,
-    settings: OpenAICompletionSettings,
-    config: OpenAICompletionConfig,
+    modelId: OllamaCompletionModelId,
+    settings: OllamaCompletionSettings,
+    config: OllamaCompletionConfig,
   ) {
     this.modelId = modelId;
     this.settings = settings;
@@ -93,7 +93,7 @@ export class OpenAICompletionLanguageModel implements LanguageModelV1 {
     }
 
     const { prompt: completionPrompt, stopSequences } =
-      convertToOpenAICompletionPrompt({ prompt, inputFormat });
+      convertToOllamaCompletionPrompt({ prompt, inputFormat });
 
     const stop = [...(stopSequences ?? []), ...(userStopSequences ?? [])];
 
@@ -178,9 +178,9 @@ export class OpenAICompletionLanguageModel implements LanguageModelV1 {
       }),
       headers: combineHeaders(this.config.headers(), options.headers),
       body: args,
-      failedResponseHandler: openaiFailedResponseHandler,
+      failedResponseHandler: ollamaFailedResponseHandler,
       successfulResponseHandler: createJsonResponseHandler(
-        openaiCompletionResponseSchema,
+        ollamaCompletionResponseSchema,
       ),
       abortSignal: options.abortSignal,
       fetch: this.config.fetch,
@@ -195,8 +195,8 @@ export class OpenAICompletionLanguageModel implements LanguageModelV1 {
         promptTokens: response.usage.prompt_tokens,
         completionTokens: response.usage.completion_tokens,
       },
-      finishReason: mapOpenAIFinishReason(choice.finish_reason),
-      logprobs: mapOpenAICompletionLogProbs(choice.logprobs),
+      finishReason: mapOllamaFinishReason(choice.finish_reason),
+      logprobs: mapOllamaCompletionLogProbs(choice.logprobs),
       rawCall: { rawPrompt, rawSettings },
       rawResponse: { headers: responseHeaders },
       response: getResponseMetadata(response),
@@ -228,9 +228,9 @@ export class OpenAICompletionLanguageModel implements LanguageModelV1 {
       }),
       headers: combineHeaders(this.config.headers(), options.headers),
       body,
-      failedResponseHandler: openaiFailedResponseHandler,
+      failedResponseHandler: ollamaFailedResponseHandler,
       successfulResponseHandler: createEventSourceResponseHandler(
-        openaiCompletionChunkSchema,
+        ollamaCompletionChunkSchema,
       ),
       abortSignal: options.abortSignal,
       fetch: this.config.fetch,
@@ -249,7 +249,7 @@ export class OpenAICompletionLanguageModel implements LanguageModelV1 {
     return {
       stream: response.pipeThrough(
         new TransformStream<
-          ParseResult<z.infer<typeof openaiCompletionChunkSchema>>,
+          ParseResult<z.infer<typeof ollamaCompletionChunkSchema>>,
           LanguageModelV1StreamPart
         >({
           transform(chunk, controller) {
@@ -288,7 +288,7 @@ export class OpenAICompletionLanguageModel implements LanguageModelV1 {
             const choice = value.choices[0];
 
             if (choice?.finish_reason != null) {
-              finishReason = mapOpenAIFinishReason(choice.finish_reason);
+              finishReason = mapOllamaFinishReason(choice.finish_reason);
             }
 
             if (choice?.text != null) {
@@ -298,7 +298,7 @@ export class OpenAICompletionLanguageModel implements LanguageModelV1 {
               });
             }
 
-            const mappedLogprobs = mapOpenAICompletionLogProbs(
+            const mappedLogprobs = mapOllamaCompletionLogProbs(
               choice?.logprobs,
             );
             if (mappedLogprobs?.length) {
@@ -327,7 +327,7 @@ export class OpenAICompletionLanguageModel implements LanguageModelV1 {
 
 // limited version of the schema, focussed on what is needed for the implementation
 // this approach limits breakages when the API changes and increases efficiency
-const openaiCompletionResponseSchema = z.object({
+const ollamaCompletionResponseSchema = z.object({
   id: z.string().nullish(),
   created: z.number().nullish(),
   model: z.string().nullish(),
@@ -352,7 +352,7 @@ const openaiCompletionResponseSchema = z.object({
 
 // limited version of the schema, focussed on what is needed for the implementation
 // this approach limits breakages when the API changes and increases efficiency
-const openaiCompletionChunkSchema = z.union([
+const ollamaCompletionChunkSchema = z.union([
   z.object({
     id: z.string().nullish(),
     created: z.number().nullish(),
@@ -378,5 +378,5 @@ const openaiCompletionChunkSchema = z.union([
       })
       .nullish(),
   }),
-  openaiErrorDataSchema,
+  ollamaErrorDataSchema,
 ]);

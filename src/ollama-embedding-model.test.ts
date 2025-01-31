@@ -1,6 +1,6 @@
 import { EmbeddingModelV1Embedding } from '@ai-sdk/provider';
 import { JsonTestServer } from '@ai-sdk/provider-utils/test';
-import { createOpenAI } from './openai-provider';
+import { createOllama } from './ollama-provider';
 
 const dummyEmbeddings = [
   [0.1, 0.2, 0.3, 0.4, 0.5],
@@ -8,11 +8,11 @@ const dummyEmbeddings = [
 ];
 const testValues = ['sunny day at the beach', 'rainy day in the city'];
 
-const provider = createOpenAI({ apiKey: 'test-api-key' });
+const provider = createOllama({ apiKey: 'test-api-key' });
 const model = provider.embedding('text-embedding-3-large');
 
 describe('doEmbed', () => {
-  const server = new JsonTestServer('https://api.openai.com/v1/embeddings');
+  const server = new JsonTestServer('https://api.ollama.com/v1/embeddings');
 
   server.setupTestEnvironment();
 
@@ -102,7 +102,7 @@ describe('doEmbed', () => {
   it('should pass headers', async () => {
     prepareJsonResponse();
 
-    const provider = createOpenAI({
+    const provider = createOllama({
       apiKey: 'test-api-key',
       organization: 'test-organization',
       project: 'test-project',
@@ -125,8 +125,8 @@ describe('doEmbed', () => {
       'content-type': 'application/json',
       'custom-provider-header': 'provider-header-value',
       'custom-request-header': 'request-header-value',
-      'openai-organization': 'test-organization',
-      'openai-project': 'test-project',
+      'ollama-organization': 'test-organization',
+      'ollama-project': 'test-project',
     });
   });
 });

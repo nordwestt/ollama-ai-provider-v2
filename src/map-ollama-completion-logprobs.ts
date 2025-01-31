@@ -1,13 +1,13 @@
 import { LanguageModelV1LogProbs } from '@ai-sdk/provider';
 
-type OpenAICompletionLogProps = {
+type OllamaCompletionLogProps = {
   tokens: string[];
   token_logprobs: number[];
   top_logprobs: Record<string, number>[] | null;
 };
 
-export function mapOpenAICompletionLogProbs(
-  logprobs: OpenAICompletionLogProps | null | undefined,
+export function mapOllamaCompletionLogProbs(
+  logprobs: OllamaCompletionLogProps | null | undefined,
 ): LanguageModelV1LogProbs | undefined {
   return logprobs?.tokens.map((token, index) => ({
     token,

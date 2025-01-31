@@ -1,4 +1,4 @@
-export type OpenAIChatPrompt = Array<ChatCompletionMessage>;
+export type OllamaChatPrompt = Array<ChatCompletionMessage>;
 
 export type ChatCompletionMessage =
   | ChatCompletionSystemMessage
@@ -49,7 +49,7 @@ export interface ChatCompletionAssistantMessage {
   tool_calls?: Array<ChatCompletionMessageToolCall>;
   /**
    * Legacy function calling interface.
-   * @deprecated this API is supported but deprecated by OpenAI.
+   * @deprecated this API is supported but deprecated by Ollama.
    */
   function_call?: {
     arguments: string;
@@ -74,7 +74,7 @@ export interface ChatCompletionToolMessage {
 
 /**
  * Legacy function calling interface.
- * @deprecated this API is supported but deprecated by OpenAI.
+ * @deprecated this API is supported but deprecated by Ollama.
  */
 export interface ChatCompletionFunctionMessage {
   role: 'function';

@@ -1,7 +1,7 @@
-// https://platform.openai.com/docs/models
-export type OpenAICompletionModelId = 'gpt-3.5-turbo-instruct' | (string & {});
+// https://platform.ollama.com/docs/models
+export type OllamaCompletionModelId = 'gpt-3.5-turbo-instruct' | (string & {});
 
-export interface OpenAICompletionSettings {
+export interface OllamaCompletionSettings {
   /**
 Echo back the prompt in addition to the completion.
    */
@@ -42,7 +42,7 @@ The suffix that comes after a completion of inserted text.
   suffix?: string;
 
   /**
-A unique identifier representing your end-user, which can help OpenAI to
+A unique identifier representing your end-user, which can help Ollama to
 monitor and detect abuse. Learn more.
    */
   user?: string;

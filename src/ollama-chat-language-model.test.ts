@@ -4,8 +4,8 @@ import {
   StreamingTestServer,
   convertReadableStreamToArray,
 } from '@ai-sdk/provider-utils/test';
-import { mapOpenAIChatLogProbsOutput } from './map-openai-chat-logprobs';
-import { createOpenAI } from './openai-provider';
+import { mapOllamaChatLogProbsOutput } from './map-ollama-chat-logprobs';
+import { createOllama } from './ollama-provider';
 
 const TEST_PROMPT: LanguageModelV1Prompt = [
   { role: 'user', content: [{ type: 'text', text: 'Hello' }] },
@@ -106,7 +106,7 @@ const TEST_LOGPROBS = {
   ],
 };
 
-const provider = createOpenAI({
+const provider = createOllama({
   apiKey: 'test-api-key',
   compatibility: 'strict',
 });
@@ -136,7 +136,7 @@ describe('settings', () => {
 
 describe('doGenerate', () => {
   const server = new JsonTestServer(
-    'https://api.openai.com/v1/chat/completions',
+    'https://api.ollama.com/v1/chat/completions',
   );
 
   server.setupTestEnvironment();
@@ -314,7 +314,7 @@ describe('doGenerate', () => {
         prompt: TEST_PROMPT,
       });
     expect(response.logprobs).toStrictEqual(
-      mapOpenAIChatLogProbsOutput(TEST_LOGPROBS),
+      mapOllamaChatLogProbsOutput(TEST_LOGPROBS),
     );
   });
 
@@ -423,7 +423,7 @@ describe('doGenerate', () => {
       mode: { type: 'regular' },
       prompt: TEST_PROMPT,
       providerMetadata: {
-        openai: { reasoningEffort: 'low' },
+        ollama: { reasoningEffort: 'low' },
       },
     });
 
@@ -462,7 +462,7 @@ describe('doGenerate', () => {
       mode: { type: 'regular' },
       prompt: TEST_PROMPT,
       providerMetadata: {
-        openai: { reasoningEffort: 'low' },
+        ollama: { reasoningEffort: 'low' },
       },
     });
 
@@ -529,7 +529,7 @@ describe('doGenerate', () => {
   it('should pass headers', async () => {
     prepareJsonResponse({ content: '' });
 
-    const provider = createOpenAI({
+    const provider = createOllama({
       apiKey: 'test-api-key',
       organization: 'test-organization',
       project: 'test-project',
@@ -554,8 +554,8 @@ describe('doGenerate', () => {
       'content-type': 'application/json',
       'custom-provider-header': 'provider-header-value',
       'custom-request-header': 'request-header-value',
-      'openai-organization': 'test-organization',
-      'openai-project': 'test-project',
+      'ollama-organization': 'test-organization',
+      'ollama-project': 'test-project',
     });
   });
 
@@ -1084,7 +1084,7 @@ describe('doGenerate', () => {
     });
 
     expect(result.providerMetadata).toStrictEqual({
-      openai: {
+      ollama: {
         cachedPromptTokens: 1152,
       },
     });
@@ -1112,7 +1112,7 @@ describe('doGenerate', () => {
     });
 
     expect(result.providerMetadata).toStrictEqual({
-      openai: {
+      ollama: {
         acceptedPredictionTokens: 123,
         rejectedPredictionTokens: 456,
       },
@@ -1257,7 +1257,7 @@ describe('doGenerate', () => {
     });
 
     expect(result.providerMetadata).toStrictEqual({
-      openai: {
+      ollama: {
         reasoningTokens: 10,
       },
     });
@@ -1273,7 +1273,7 @@ describe('doGenerate', () => {
       mode: { type: 'regular' },
       prompt: TEST_PROMPT,
       providerMetadata: {
-        openai: {
+        ollama: {
           maxCompletionTokens: 255,
         },
       },
@@ -1294,7 +1294,7 @@ describe('doGenerate', () => {
       mode: { type: 'regular' },
       prompt: TEST_PROMPT,
       providerMetadata: {
-        openai: {
+        ollama: {
           prediction: {
             type: 'content',
             content: 'Hello, World!',
@@ -1321,7 +1321,7 @@ describe('doGenerate', () => {
       mode: { type: 'regular' },
       prompt: TEST_PROMPT,
       providerMetadata: {
-        openai: {
+        ollama: {
           store: true,
         },
       },
@@ -1342,7 +1342,7 @@ describe('doGenerate', () => {
       mode: { type: 'regular' },
       prompt: TEST_PROMPT,
       providerMetadata: {
-        openai: {
+        ollama: {
           metadata: {
             custom: 'value',
           },
@@ -1362,7 +1362,7 @@ describe('doGenerate', () => {
 
 describe('doStream', () => {
   const server = new StreamingTestServer(
-    'https://api.openai.com/v1/chat/completions',
+    'https://api.ollama.com/v1/chat/completions',
   );
 
   server.setupTestEnvironment();
@@ -1458,9 +1458,9 @@ describe('doStream', () => {
       {
         type: 'finish',
         finishReason: 'stop',
-        logprobs: mapOpenAIChatLogProbsOutput(TEST_LOGPROBS),
+        logprobs: mapOllamaChatLogProbsOutput(TEST_LOGPROBS),
         usage: { promptTokens: 17, completionTokens: 227 },
-        providerMetadata: { openai: {} },
+        providerMetadata: { ollama: {} },
       },
     ]);
   });
@@ -1588,7 +1588,7 @@ describe('doStream', () => {
         finishReason: 'tool-calls',
         logprobs: undefined,
         usage: { promptTokens: 53, completionTokens: 17 },
-        providerMetadata: { openai: {} },
+        providerMetadata: { ollama: {} },
       },
     ]);
   });
@@ -1723,7 +1723,7 @@ describe('doStream', () => {
         finishReason: 'tool-calls',
         logprobs: undefined,
         usage: { promptTokens: 53, completionTokens: 17 },
-        providerMetadata: { openai: {} },
+        providerMetadata: { ollama: {} },
       },
     ]);
   });
@@ -1847,7 +1847,7 @@ describe('doStream', () => {
         finishReason: 'tool-calls',
         logprobs: undefined,
         usage: { promptTokens: 226, completionTokens: 20 },
-        providerMetadata: { openai: {} },
+        providerMetadata: { ollama: {} },
       },
     ]);
   });
@@ -1912,7 +1912,7 @@ describe('doStream', () => {
         finishReason: 'tool-calls',
         logprobs: undefined,
         usage: { promptTokens: 53, completionTokens: 17 },
-        providerMetadata: { openai: {} },
+        providerMetadata: { ollama: {} },
       },
     ]);
   });
@@ -1989,7 +1989,7 @@ describe('doStream', () => {
         finishReason: 'stop',
         logprobs: undefined,
         usage: { promptTokens: 53, completionTokens: 17 },
-        providerMetadata: { openai: {} },
+        providerMetadata: { ollama: {} },
       },
     ]);
   });
@@ -1997,7 +1997,7 @@ describe('doStream', () => {
   it('should handle error stream parts', async () => {
     server.responseChunks = [
       `data: {"error":{"message": "The server had an error processing your request. Sorry about that! You can retry your request, or contact us through our ` +
-        `help center at help.openai.com if you keep seeing this error.","type":"server_error","param":null,"code":null}}\n\n`,
+        `help center at help.ollama.com if you keep seeing this error.","type":"server_error","param":null,"code":null}}\n\n`,
       'data: [DONE]\n\n',
     ];
 
@@ -2014,7 +2014,7 @@ describe('doStream', () => {
           message:
             'The server had an error processing your request. Sorry about that! ' +
             'You can retry your request, or contact us through our help center at ' +
-            'help.openai.com if you keep seeing this error.',
+            'help.ollama.com if you keep seeing this error.',
           type: 'server_error',
           code: null,
           param: null,
@@ -2028,7 +2028,7 @@ describe('doStream', () => {
           completionTokens: NaN,
           promptTokens: NaN,
         },
-        providerMetadata: { openai: {} },
+        providerMetadata: { ollama: {} },
       },
     ]);
   });
@@ -2054,7 +2054,7 @@ describe('doStream', () => {
         completionTokens: NaN,
         promptTokens: NaN,
       },
-      providerMetadata: { openai: {} },
+      providerMetadata: { ollama: {} },
     });
   });
 
@@ -2116,7 +2116,7 @@ describe('doStream', () => {
   it('should pass headers', async () => {
     prepareStreamResponse({ content: [] });
 
-    const provider = createOpenAI({
+    const provider = createOllama({
       apiKey: 'test-api-key',
       organization: 'test-organization',
       project: 'test-project',
@@ -2141,8 +2141,8 @@ describe('doStream', () => {
       'content-type': 'application/json',
       'custom-provider-header': 'provider-header-value',
       'custom-request-header': 'request-header-value',
-      'openai-organization': 'test-organization',
-      'openai-project': 'test-project',
+      'ollama-organization': 'test-organization',
+      'ollama-project': 'test-project',
     });
   });
 
@@ -2181,7 +2181,7 @@ describe('doStream', () => {
         completionTokens: 20,
       },
       providerMetadata: {
-        openai: { cachedPromptTokens: 1152 },
+        ollama: { cachedPromptTokens: 1152 },
       },
     });
   });
@@ -2222,7 +2222,7 @@ describe('doStream', () => {
         completionTokens: 20,
       },
       providerMetadata: {
-        openai: {
+        ollama: {
           acceptedPredictionTokens: 123,
           rejectedPredictionTokens: 456,
         },
@@ -2238,7 +2238,7 @@ describe('doStream', () => {
       mode: { type: 'regular' },
       prompt: TEST_PROMPT,
       providerMetadata: {
-        openai: {
+        ollama: {
           store: true,
         },
       },
@@ -2261,7 +2261,7 @@ describe('doStream', () => {
       mode: { type: 'regular' },
       prompt: TEST_PROMPT,
       providerMetadata: {
-        openai: {
+        ollama: {
           metadata: {
             custom: 'value',
           },
@@ -2309,7 +2309,7 @@ describe('doStream', () => {
           finishReason: 'stop',
           usage: { promptTokens: 17, completionTokens: 227 },
           logprobs: undefined,
-          providerMetadata: { openai: {} },
+          providerMetadata: { ollama: {} },
         },
       ]);
     });
@@ -2351,7 +2351,7 @@ describe('doStream', () => {
           usage: { promptTokens: 15, completionTokens: 20 },
           logprobs: undefined,
           providerMetadata: {
-            openai: {
+            ollama: {
               reasoningTokens: 10,
             },
           },
@@ -2363,7 +2363,7 @@ describe('doStream', () => {
 
 describe('doStream simulated streaming', () => {
   const server = new JsonTestServer(
-    'https://api.openai.com/v1/chat/completions',
+    'https://api.ollama.com/v1/chat/completions',
   );
 
   server.setupTestEnvironment();
@@ -2469,7 +2469,7 @@ describe('doStream simulated streaming', () => {
         finishReason: 'stop',
         usage: { promptTokens: 4, completionTokens: 30 },
         logprobs: undefined,
-        providerMetadata: { openai: {} },
+        providerMetadata: { ollama: {} },
       },
     ]);
   });
@@ -2540,7 +2540,7 @@ describe('doStream simulated streaming', () => {
         finishReason: 'stop',
         usage: { promptTokens: 4, completionTokens: 30 },
         logprobs: undefined,
-        providerMetadata: { openai: {} },
+        providerMetadata: { ollama: {} },
       },
     ]);
   });
@@ -2583,7 +2583,7 @@ describe('doStream simulated streaming', () => {
         usage: { promptTokens: 15, completionTokens: 20 },
         logprobs: undefined,
         providerMetadata: {
-          openai: {
+          ollama: {
             reasoningTokens: 10,
           },
         },
@@ -2615,7 +2615,7 @@ describe('doStream simulated streaming', () => {
         finishReason: 'stop',
         usage: { promptTokens: 4, completionTokens: 30 },
         logprobs: undefined,
-        providerMetadata: { openai: {} },
+        providerMetadata: { ollama: {} },
       },
     ]);
   });

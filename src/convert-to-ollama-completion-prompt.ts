@@ -4,7 +4,7 @@ import {
   UnsupportedFunctionalityError,
 } from '@ai-sdk/provider';
 
-export function convertToOpenAICompletionPrompt({
+export function convertToOllamaCompletionPrompt({
   prompt,
   inputFormat,
   user = 'user',

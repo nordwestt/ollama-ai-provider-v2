@@ -4,8 +4,8 @@ import {
   StreamingTestServer,
   convertReadableStreamToArray,
 } from '@ai-sdk/provider-utils/test';
-import { createOpenAI } from './openai-provider';
-import { mapOpenAICompletionLogProbs } from './map-openai-completion-logprobs';
+import { createOllama } from './ollama-provider';
+import { mapOllamaCompletionLogProbs } from './map-ollama-completion-logprobs';
 
 const TEST_PROMPT: LanguageModelV1Prompt = [
   { role: 'user', content: [{ type: 'text', text: 'Hello' }] },
@@ -38,7 +38,7 @@ const TEST_LOGPROBS = {
   ] as Record<string, number>[],
 };
 
-const provider = createOpenAI({
+const provider = createOllama({
   apiKey: 'test-api-key',
   compatibility: 'strict',
 });
@@ -46,7 +46,7 @@ const provider = createOpenAI({
 const model = provider.completion('gpt-3.5-turbo-instruct');
 
 describe('doGenerate', () => {
-  const server = new JsonTestServer('https://api.openai.com/v1/completions');
+  const server = new JsonTestServer('https://api.ollama.com/v1/completions');
 
   server.setupTestEnvironment();
 
@@ -163,7 +163,7 @@ describe('doGenerate', () => {
   it('should extract logprobs', async () => {
     prepareJsonResponse({ logprobs: TEST_LOGPROBS });
 
-    const provider = createOpenAI({ apiKey: 'test-api-key' });
+    const provider = createOllama({ apiKey: 'test-api-key' });
 
     const response = await provider
       .completion('gpt-3.5-turbo', { logprobs: 1 })
@@ -173,7 +173,7 @@ describe('doGenerate', () => {
         prompt: TEST_PROMPT,
       });
     expect(response.logprobs).toStrictEqual(
-      mapOpenAICompletionLogProbs(TEST_LOGPROBS),
+      mapOllamaCompletionLogProbs(TEST_LOGPROBS),
     );
   });
 
@@ -252,7 +252,7 @@ describe('doGenerate', () => {
   it('should pass headers', async () => {
     prepareJsonResponse({ content: '' });
 
-    const provider = createOpenAI({
+    const provider = createOllama({
       apiKey: 'test-api-key',
       organization: 'test-organization',
       project: 'test-project',
@@ -277,15 +277,15 @@ describe('doGenerate', () => {
       'content-type': 'application/json',
       'custom-provider-header': 'provider-header-value',
       'custom-request-header': 'request-header-value',
-      'openai-organization': 'test-organization',
-      'openai-project': 'test-project',
+      'ollama-organization': 'test-organization',
+      'ollama-project': 'test-project',
     });
   });
 });
 
 describe('doStream', () => {
   const server = new StreamingTestServer(
-    'https://api.openai.com/v1/completions',
+    'https://api.ollama.com/v1/completions',
   );
 
   server.setupTestEnvironment();
@@ -365,7 +365,7 @@ describe('doStream', () => {
       {
         type: 'finish',
         finishReason: 'stop',
-        logprobs: mapOpenAICompletionLogProbs(TEST_LOGPROBS),
+        logprobs: mapOllamaCompletionLogProbs(TEST_LOGPROBS),
         usage: { promptTokens: 10, completionTokens: 362 },
       },
     ]);
@@ -374,7 +374,7 @@ describe('doStream', () => {
   it('should handle error stream parts', async () => {
     server.responseChunks = [
       `data: {"error":{"message": "The server had an error processing your request. Sorry about that! You can retry your request, or contact us through our ` +
-        `help center at help.openai.com if you keep seeing this error.","type":"server_error","param":null,"code":null}}\n\n`,
+        `help center at help.ollama.com if you keep seeing this error.","type":"server_error","param":null,"code":null}}\n\n`,
       'data: [DONE]\n\n',
     ];
 
@@ -391,7 +391,7 @@ describe('doStream', () => {
           message:
             'The server had an error processing your request. Sorry about that! ' +
             'You can retry your request, or contact us through our help center at ' +
-            'help.openai.com if you keep seeing this error.',
+            'help.ollama.com if you keep seeing this error.',
           type: 'server_error',
           code: null,
           param: null,
@@ -491,7 +491,7 @@ describe('doStream', () => {
   it('should pass headers', async () => {
     prepareStreamResponse({ content: [] });
 
-    const provider = createOpenAI({
+    const provider = createOllama({
       apiKey: 'test-api-key',
       organization: 'test-organization',
       project: 'test-project',
@@ -516,8 +516,8 @@ describe('doStream', () => {
       'content-type': 'application/json',
       'custom-provider-header': 'provider-header-value',
       'custom-request-header': 'request-header-value',
-      'openai-organization': 'test-organization',
-      'openai-project': 'test-project',
+      'ollama-organization': 'test-organization',
+      'ollama-project': 'test-project',
     });
   });
 });

@@ -1,7 +1,7 @@
 import { safeParseJSON } from '@ai-sdk/provider-utils';
-import { openaiErrorDataSchema } from './openai-error';
+import { ollamaErrorDataSchema } from './ollama-error';
 
-describe('openaiErrorDataSchema', () => {
+describe('ollamaErrorDataSchema', () => {
   it('should parse OpenRouter resource exhausted error', () => {
     const error = `
 {"error":{"message":"{\\n  \\"error\\": {\\n    \\"code\\": 429,\\n    \\"message\\": \\"Resource has been exhausted (e.g. check quota).\\",\\n    \\"status\\": \\"RESOURCE_EXHAUSTED\\"\\n  }\\n}\\n","code":429}}
@@ -9,7 +9,7 @@ describe('openaiErrorDataSchema', () => {
 
     const result = safeParseJSON({
       text: error,
-      schema: openaiErrorDataSchema,
+      schema: ollamaErrorDataSchema,
     });
 
     expect(result).toStrictEqual({

@@ -1,8 +1,8 @@
-import { convertToOpenAIChatMessages } from './convert-to-openai-chat-messages';
+import { convertToOllamaChatMessages } from './convert-to-ollama-chat-messages';
 
 describe('system messages', () => {
   it('should forward system messages', async () => {
-    const result = convertToOpenAIChatMessages({
+    const result = convertToOllamaChatMessages({
       prompt: [{ role: 'system', content: 'You are a helpful assistant.' }],
     });
 
@@ -12,7 +12,7 @@ describe('system messages', () => {
   });
 
   it('should convert system messages to developer messages when requested', async () => {
-    const result = convertToOpenAIChatMessages({
+    const result = convertToOllamaChatMessages({
       prompt: [{ role: 'system', content: 'You are a helpful assistant.' }],
       systemMessageMode: 'developer',
     });
@@ -23,7 +23,7 @@ describe('system messages', () => {
   });
 
   it('should remove system messages when requested', async () => {
-    const result = convertToOpenAIChatMessages({
+    const result = convertToOllamaChatMessages({
       prompt: [{ role: 'system', content: 'You are a helpful assistant.' }],
       systemMessageMode: 'remove',
     });
@@ -34,7 +34,7 @@ describe('system messages', () => {
 
 describe('user messages', () => {
   it('should convert messages with only a text part to a string content', async () => {
-    const result = convertToOpenAIChatMessages({
+    const result = convertToOllamaChatMessages({
       prompt: [
         {
           role: 'user',
@@ -47,7 +47,7 @@ describe('user messages', () => {
   });
 
   it('should convert messages with image parts', async () => {
-    const result = convertToOpenAIChatMessages({
+    const result = convertToOllamaChatMessages({
       prompt: [
         {
           role: 'user',
@@ -78,7 +78,7 @@ describe('user messages', () => {
   });
 
   it('should add image detail when specified through extension', async () => {
-    const result = convertToOpenAIChatMessages({
+    const result = convertToOllamaChatMessages({
       prompt: [
         {
           role: 'user',
@@ -88,7 +88,7 @@ describe('user messages', () => {
               image: new Uint8Array([0, 1, 2, 3]),
               mimeType: 'image/png',
               providerMetadata: {
-                openai: {
+                ollama: {
                   imageDetail: 'low',
                 },
               },
@@ -117,7 +117,7 @@ describe('user messages', () => {
   describe('file parts', () => {
     it('should throw for unsupported mime types', () => {
       expect(() =>
-        convertToOpenAIChatMessages({
+        convertToOllamaChatMessages({
           prompt: [
             {
               role: 'user',
@@ -134,7 +134,7 @@ describe('user messages', () => {
 
     it('should throw for URL data', () => {
       expect(() =>
-        convertToOpenAIChatMessages({
+        convertToOllamaChatMessages({
           prompt: [
             {
               role: 'user',
@@ -154,7 +154,7 @@ describe('user messages', () => {
     });
 
     it('should add audio content for audio/wav file parts', () => {
-      const result = convertToOpenAIChatMessages({
+      const result = convertToOllamaChatMessages({
         prompt: [
           {
             role: 'user',
@@ -183,7 +183,7 @@ describe('user messages', () => {
     });
 
     it('should add audio content for audio/mpeg file parts', () => {
-      const result = convertToOpenAIChatMessages({
+      const result = convertToOllamaChatMessages({
         prompt: [
           {
             role: 'user',
@@ -212,7 +212,7 @@ describe('user messages', () => {
     });
 
     it('should add audio content for audio/mp3 file parts', () => {
-      const result = convertToOpenAIChatMessages({
+      const result = convertToOllamaChatMessages({
         prompt: [
           {
             role: 'user',
@@ -244,7 +244,7 @@ describe('user messages', () => {
 
 describe('tool calls', () => {
   it('should stringify arguments to tool calls', () => {
-    const result = convertToOpenAIChatMessages({
+    const result = convertToOllamaChatMessages({
       prompt: [
         {
           role: 'assistant',
@@ -295,7 +295,7 @@ describe('tool calls', () => {
   });
 
   it('should convert tool calls to function calls with useLegacyFunctionCalling', () => {
-    const result = convertToOpenAIChatMessages({
+    const result = convertToOllamaChatMessages({
       prompt: [
         {
           role: 'assistant',

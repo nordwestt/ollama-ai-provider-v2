@@ -53,7 +53,7 @@ export function prepareTools({
   const toolChoice = mode.toolChoice;
 
   if (useLegacyFunctionCalling) {
-    const openaiFunctions: Array<{
+    const ollamaFunctions: Array<{
       name: string;
       description: string | undefined;
       parameters: JSONSchema7;
@@ -63,7 +63,7 @@ export function prepareTools({
       if (tool.type === 'provider-defined') {
         toolWarnings.push({ type: 'unsupported-tool', tool });
       } else {
-        openaiFunctions.push({
+        ollamaFunctions.push({
           name: tool.name,
           description: tool.description,
           parameters: tool.parameters,
@@ -73,7 +73,7 @@ export function prepareTools({
 
     if (toolChoice == null) {
       return {
-        functions: openaiFunctions,
+        functions: ollamaFunctions,
         function_call: undefined,
         toolWarnings,
       };
@@ -86,7 +86,7 @@ export function prepareTools({
       case 'none':
       case undefined:
         return {
-          functions: openaiFunctions,
+          functions: ollamaFunctions,
           function_call: undefined,
           toolWarnings,
         };
@@ -96,14 +96,14 @@ export function prepareTools({
         });
       default:
         return {
-          functions: openaiFunctions,
+          functions: ollamaFunctions,
           function_call: { name: toolChoice.toolName },
           toolWarnings,
         };
     }
   }
 
-  const openaiTools: Array<{
+  const ollamaTools: Array<{
     type: 'function';
     function: {
       name: string;
@@ -117,7 +117,7 @@ export function prepareTools({
     if (tool.type === 'provider-defined') {
       toolWarnings.push({ type: 'unsupported-tool', tool });
     } else {
-      openaiTools.push({
+      ollamaTools.push({
         type: 'function',
         function: {
           name: tool.name,
@@ -130,7 +130,7 @@ export function prepareTools({
   }
 
   if (toolChoice == null) {
-    return { tools: openaiTools, tool_choice: undefined, toolWarnings };
+    return { tools: ollamaTools, tool_choice: undefined, toolWarnings };
   }
 
   const type = toolChoice.type;
@@ -139,10 +139,10 @@ export function prepareTools({
     case 'auto':
     case 'none':
     case 'required':
-      return { tools: openaiTools, tool_choice: type, toolWarnings };
+      return { tools: ollamaTools, tool_choice: type, toolWarnings };
     case 'tool':
       return {
-        tools: openaiTools,
+        tools: ollamaTools,
         tool_choice: {
           type: 'function',
           function: {

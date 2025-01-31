@@ -1,6 +1,6 @@
 import { LanguageModelV1LogProbs } from '@ai-sdk/provider';
 
-type OpenAIChatLogProbs = {
+type OllamaChatLogProbs = {
   content:
     | {
         token: string;
@@ -15,8 +15,8 @@ type OpenAIChatLogProbs = {
     | null;
 };
 
-export function mapOpenAIChatLogProbsOutput(
-  logprobs: OpenAIChatLogProbs | null | undefined,
+export function mapOllamaChatLogProbsOutput(
+  logprobs: OllamaChatLogProbs | null | undefined,
 ): LanguageModelV1LogProbs | undefined {
   return (
     logprobs?.content?.map(({ token, logprob, top_logprobs }) => ({

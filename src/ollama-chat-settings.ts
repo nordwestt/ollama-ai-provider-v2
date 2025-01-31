@@ -1,5 +1,5 @@
-// https://platform.openai.com/docs/models
-export type OpenAIChatModelId =
+// https://platform.ollama.com/docs/models
+export type OllamaChatModelId =
   | 'o1'
   | 'o1-2024-12-17'
   | 'o1-mini'
@@ -27,7 +27,7 @@ export type OpenAIChatModelId =
   | 'gpt-3.5-turbo-1106'
   | (string & {});
 
-export interface OpenAIChatSettings {
+export interface OllamaChatSettings {
   /**
 Modify the likelihood of specified tokens appearing in the completion.
 
@@ -78,19 +78,19 @@ which causes `streamObject` to be non-streaming.
 
 Prefer setting `parallelToolCalls: false` over this option.
 
-@deprecated this API is supported but deprecated by OpenAI.
+@deprecated this API is supported but deprecated by Ollama.
    */
   useLegacyFunctionCalling?: boolean;
 
   /**
-A unique identifier representing your end-user, which can help OpenAI to
+A unique identifier representing your end-user, which can help Ollama to
 monitor and detect abuse. Learn more.
 */
   user?: string;
 
   /**
 Automatically download images and pass the image as data to the model.
-OpenAI supports image URLs for public models, so this is only needed for
+Ollama supports image URLs for public models, so this is only needed for
 private models or when the images are not publicly accessible.
 
 Defaults to `false`.

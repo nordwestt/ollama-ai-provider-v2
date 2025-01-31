@@ -1,15 +1,15 @@
 import { JsonTestServer } from '@ai-sdk/provider-utils/test';
-import { createOpenAI } from './openai-provider';
-import { OpenAIImageModel } from './openai-image-model';
+import { createOllama } from './ollama-provider';
+import { OllamaImageModel } from './ollama-image-model';
 
 const prompt = 'A cute baby sea otter';
 
-const provider = createOpenAI({ apiKey: 'test-api-key' });
+const provider = createOllama({ apiKey: 'test-api-key' });
 const model = provider.image('dall-e-3', { maxImagesPerCall: 2 });
 
 describe('doGenerate', () => {
   const server = new JsonTestServer(
-    'https://api.openai.com/v1/images/generations',
+    'https://api.ollama.com/v1/images/generations',
   );
 
   server.setupTestEnvironment();
@@ -39,7 +39,7 @@ describe('doGenerate', () => {
       size: '1024x1024',
       aspectRatio: undefined,
       seed: undefined,
-      providerOptions: { openai: { style: 'vivid' } },
+      providerOptions: { ollama: { style: 'vivid' } },
     });
 
     expect(await server.getRequestBodyJson()).toStrictEqual({
@@ -55,7 +55,7 @@ describe('doGenerate', () => {
   it('should pass headers', async () => {
     prepareJsonResponse();
 
-    const provider = createOpenAI({
+    const provider = createOllama({
       apiKey: 'test-api-key',
       organization: 'test-organization',
       project: 'test-project',
@@ -70,7 +70,7 @@ describe('doGenerate', () => {
       size: '1024x1024',
       aspectRatio: undefined,
       seed: undefined,
-      providerOptions: { openai: { style: 'vivid' } },
+      providerOptions: { ollama: { style: 'vivid' } },
       headers: {
         'Custom-Request-Header': 'request-header-value',
       },
@@ -83,8 +83,8 @@ describe('doGenerate', () => {
       'content-type': 'application/json',
       'custom-provider-header': 'provider-header-value',
       'custom-request-header': 'request-header-value',
-      'openai-organization': 'test-organization',
-      'openai-project': 'test-project',
+      'ollama-organization': 'test-organization',
+      'ollama-project': 'test-project',
     });
   });
 
@@ -146,12 +146,12 @@ describe('doGenerate', () => {
     prepareJsonResponse();
     const testDate = new Date('2024-03-15T12:00:00Z');
 
-    const customModel = new OpenAIImageModel(
+    const customModel = new OllamaImageModel(
       'dall-e-3',
       {},
       {
         provider: 'test-provider',
-        url: () => 'https://api.openai.com/v1/images/generations',
+        url: () => 'https://api.ollama.com/v1/images/generations',
         headers: () => ({}),
         _internal: {
           currentDate: () => testDate,

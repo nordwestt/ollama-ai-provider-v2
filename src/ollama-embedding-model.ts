@@ -8,19 +8,19 @@ import {
   postJsonToApi,
 } from '@ai-sdk/provider-utils';
 import { z } from 'zod';
-import { OpenAIConfig } from './openai-config';
+import { OllamaConfig } from './ollama-config';
 import {
-  OpenAIEmbeddingModelId,
-  OpenAIEmbeddingSettings,
-} from './openai-embedding-settings';
-import { openaiFailedResponseHandler } from './openai-error';
+  OllamaEmbeddingModelId,
+  OllamaEmbeddingSettings,
+} from './ollama-embedding-settings';
+import { ollamaFailedResponseHandler } from './ollama-error';
 
-export class OpenAIEmbeddingModel implements EmbeddingModelV1<string> {
+export class OllamaEmbeddingModel implements EmbeddingModelV1<string> {
   readonly specificationVersion = 'v1';
-  readonly modelId: OpenAIEmbeddingModelId;
+  readonly modelId: OllamaEmbeddingModelId;
 
-  private readonly config: OpenAIConfig;
-  private readonly settings: OpenAIEmbeddingSettings;
+  private readonly config: OllamaConfig;
+  private readonly settings: OllamaEmbeddingSettings;
 
   get provider(): string {
     return this.config.provider;
@@ -35,9 +35,9 @@ export class OpenAIEmbeddingModel implements EmbeddingModelV1<string> {
   }
 
   constructor(
-    modelId: OpenAIEmbeddingModelId,
-    settings: OpenAIEmbeddingSettings,
-    config: OpenAIConfig,
+    modelId: OllamaEmbeddingModelId,
+    settings: OllamaEmbeddingSettings,
+    config: OllamaConfig,
   ) {
     this.modelId = modelId;
     this.settings = settings;
@@ -73,9 +73,9 @@ export class OpenAIEmbeddingModel implements EmbeddingModelV1<string> {
         dimensions: this.settings.dimensions,
         user: this.settings.user,
       },
-      failedResponseHandler: openaiFailedResponseHandler,
+      failedResponseHandler: ollamaFailedResponseHandler,
       successfulResponseHandler: createJsonResponseHandler(
-        openaiTextEmbeddingResponseSchema,
+        ollamaTextEmbeddingResponseSchema,
       ),
       abortSignal,
       fetch: this.config.fetch,
@@ -93,7 +93,7 @@ export class OpenAIEmbeddingModel implements EmbeddingModelV1<string> {
 
 // minimal version of the schema, focussed on what is needed for the implementation
 // this approach limits breakages when the API changes and increases efficiency
-const openaiTextEmbeddingResponseSchema = z.object({
+const ollamaTextEmbeddingResponseSchema = z.object({
   data: z.array(z.object({ embedding: z.array(z.number()) })),
   usage: z.object({ prompt_tokens: z.number() }).nullish(),
 });

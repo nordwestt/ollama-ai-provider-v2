@@ -1,2 +1,2 @@
-export { createOpenAI, openai } from './openai-provider';
-export type { OpenAIProvider, OpenAIProviderSettings } from './openai-provider';
+export { createOllama, ollama } from './ollama-provider';
+export type { OllamaProvider, OllamaProviderSettings } from './ollama-provider';

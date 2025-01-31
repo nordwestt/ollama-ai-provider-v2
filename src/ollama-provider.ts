@@ -9,65 +9,65 @@ import {
   loadApiKey,
   withoutTrailingSlash,
 } from '@ai-sdk/provider-utils';
-import { OpenAIChatLanguageModel } from './openai-chat-language-model';
-import { OpenAIChatModelId, OpenAIChatSettings } from './openai-chat-settings';
-import { OpenAICompletionLanguageModel } from './openai-completion-language-model';
+import { OllamaChatLanguageModel } from './ollama-chat-language-model';
+import { OllamaChatModelId, OllamaChatSettings } from './ollama-chat-settings';
+import { OllamaCompletionLanguageModel } from './ollama-completion-language-model';
 import {
-  OpenAICompletionModelId,
-  OpenAICompletionSettings,
-} from './openai-completion-settings';
-import { OpenAIEmbeddingModel } from './openai-embedding-model';
+  OllamaCompletionModelId,
+  OllamaCompletionSettings,
+} from './ollama-completion-settings';
+import { OllamaEmbeddingModel } from './ollama-embedding-model';
 import {
-  OpenAIEmbeddingModelId,
-  OpenAIEmbeddingSettings,
-} from './openai-embedding-settings';
-import { OpenAIImageModel } from './openai-image-model';
+  OllamaEmbeddingModelId,
+  OllamaEmbeddingSettings,
+} from './ollama-embedding-settings';
+import { OllamaImageModel } from './ollama-image-model';
 import {
-  OpenAIImageModelId,
-  OpenAIImageSettings,
-} from './openai-image-settings';
+  OllamaImageModelId,
+  OllamaImageSettings,
+} from './ollama-image-settings';
 
-export interface OpenAIProvider extends ProviderV1 {
+export interface OllamaProvider extends ProviderV1 {
   (
     modelId: 'gpt-3.5-turbo-instruct',
-    settings?: OpenAICompletionSettings,
-  ): OpenAICompletionLanguageModel;
-  (modelId: OpenAIChatModelId, settings?: OpenAIChatSettings): LanguageModelV1;
+    settings?: OllamaCompletionSettings,
+  ): OllamaCompletionLanguageModel;
+  (modelId: OllamaChatModelId, settings?: OllamaChatSettings): LanguageModelV1;
 
   /**
-Creates an OpenAI model for text generation.
+Creates an Ollama model for text generation.
    */
   languageModel(
     modelId: 'gpt-3.5-turbo-instruct',
-    settings?: OpenAICompletionSettings,
-  ): OpenAICompletionLanguageModel;
+    settings?: OllamaCompletionSettings,
+  ): OllamaCompletionLanguageModel;
   languageModel(
-    modelId: OpenAIChatModelId,
-    settings?: OpenAIChatSettings,
+    modelId: OllamaChatModelId,
+    settings?: OllamaChatSettings,
   ): LanguageModelV1;
 
   /**
-Creates an OpenAI chat model for text generation.
+Creates an Ollama chat model for text generation.
    */
   chat(
-    modelId: OpenAIChatModelId,
-    settings?: OpenAIChatSettings,
+    modelId: OllamaChatModelId,
+    settings?: OllamaChatSettings,
   ): LanguageModelV1;
 
   /**
-Creates an OpenAI completion model for text generation.
+Creates an Ollama completion model for text generation.
    */
   completion(
-    modelId: OpenAICompletionModelId,
-    settings?: OpenAICompletionSettings,
+    modelId: OllamaCompletionModelId,
+    settings?: OllamaCompletionSettings,
   ): LanguageModelV1;
 
   /**
 Creates a model for text embeddings.
    */
   embedding(
-    modelId: OpenAIEmbeddingModelId,
-    settings?: OpenAIEmbeddingSettings,
+    modelId: OllamaEmbeddingModelId,
+    settings?: OllamaEmbeddingSettings,
   ): EmbeddingModelV1<string>;
 
   /**
@@ -76,38 +76,38 @@ Creates a model for text embeddings.
 @deprecated Use `textEmbeddingModel` instead.
    */
   textEmbedding(
-    modelId: OpenAIEmbeddingModelId,
-    settings?: OpenAIEmbeddingSettings,
+    modelId: OllamaEmbeddingModelId,
+    settings?: OllamaEmbeddingSettings,
   ): EmbeddingModelV1<string>;
 
   /**
 Creates a model for text embeddings.
    */
   textEmbeddingModel(
-    modelId: OpenAIEmbeddingModelId,
-    settings?: OpenAIEmbeddingSettings,
+    modelId: OllamaEmbeddingModelId,
+    settings?: OllamaEmbeddingSettings,
   ): EmbeddingModelV1<string>;
 
   /**
 Creates a model for image generation.
    */
   image(
-    modelId: OpenAIImageModelId,
-    settings?: OpenAIImageSettings,
+    modelId: OllamaImageModelId,
+    settings?: OllamaImageSettings,
   ): ImageModelV1;
 
   /**
 Creates a model for image generation.
    */
   imageModel(
-    modelId: OpenAIImageModelId,
-    settings?: OpenAIImageSettings,
+    modelId: OllamaImageModelId,
+    settings?: OllamaImageSettings,
   ): ImageModelV1;
 }
 
-export interface OpenAIProviderSettings {
+export interface OllamaProviderSettings {
   /**
-Base URL for the OpenAI API calls.
+Base URL for the Ollama API calls.
      */
   baseURL?: string;
 
@@ -117,12 +117,12 @@ API key for authenticating requests.
   apiKey?: string;
 
   /**
-OpenAI Organization.
+Ollama Organization.
      */
   organization?: string;
 
   /**
-OpenAI project.
+Ollama project.
      */
   project?: string;
 
@@ -132,14 +132,14 @@ Custom headers to include in the requests.
   headers?: Record<string, string>;
 
   /**
-OpenAI compatibility mode. Should be set to `strict` when using the OpenAI API,
+Ollama compatibility mode. Should be set to `strict` when using the Ollama API,
 and `compatible` when using 3rd party providers. In `compatible` mode, newer
 information such as streamOptions are not being sent. Defaults to 'compatible'.
    */
   compatibility?: 'strict' | 'compatible';
 
   /**
-Provider name. Overrides the `openai` default name for 3rd party providers.
+Provider name. Overrides the `ollama` default name for 3rd party providers.
    */
   name?: string;
 
@@ -151,35 +151,35 @@ or to provide a custom fetch implementation for e.g. testing.
 }
 
 /**
-Create an OpenAI provider instance.
+Create an Ollama provider instance.
  */
-export function createOpenAI(
-  options: OpenAIProviderSettings = {},
-): OpenAIProvider {
+export function createOllama(
+  options: OllamaProviderSettings = {},
+): OllamaProvider {
   const baseURL =
-    withoutTrailingSlash(options.baseURL) ?? 'https://api.openai.com/v1';
+    withoutTrailingSlash(options.baseURL) ?? 'https://api.ollama.com/v1';
 
   // we default to compatible, because strict breaks providers like Groq:
   const compatibility = options.compatibility ?? 'compatible';
 
-  const providerName = options.name ?? 'openai';
+  const providerName = options.name ?? 'ollama';
 
   const getHeaders = () => ({
     Authorization: `Bearer ${loadApiKey({
       apiKey: options.apiKey,
       environmentVariableName: 'OPENAI_API_KEY',
-      description: 'OpenAI',
+      description: 'Ollama',
     })}`,
-    'OpenAI-Organization': options.organization,
-    'OpenAI-Project': options.project,
+    'Ollama-Organization': options.organization,
+    'Ollama-Project': options.project,
     ...options.headers,
   });
 
   const createChatModel = (
-    modelId: OpenAIChatModelId,
-    settings: OpenAIChatSettings = {},
+    modelId: OllamaChatModelId,
+    settings: OllamaChatSettings = {},
   ) =>
-    new OpenAIChatLanguageModel(modelId, settings, {
+    new OllamaChatLanguageModel(modelId, settings, {
       provider: `${providerName}.chat`,
       url: ({ path }) => `${baseURL}${path}`,
       headers: getHeaders,
@@ -188,10 +188,10 @@ export function createOpenAI(
     });
 
   const createCompletionModel = (
-    modelId: OpenAICompletionModelId,
-    settings: OpenAICompletionSettings = {},
+    modelId: OllamaCompletionModelId,
+    settings: OllamaCompletionSettings = {},
   ) =>
-    new OpenAICompletionLanguageModel(modelId, settings, {
+    new OllamaCompletionLanguageModel(modelId, settings, {
       provider: `${providerName}.completion`,
       url: ({ path }) => `${baseURL}${path}`,
       headers: getHeaders,
@@ -200,10 +200,10 @@ export function createOpenAI(
     });
 
   const createEmbeddingModel = (
-    modelId: OpenAIEmbeddingModelId,
-    settings: OpenAIEmbeddingSettings = {},
+    modelId: OllamaEmbeddingModelId,
+    settings: OllamaEmbeddingSettings = {},
   ) =>
-    new OpenAIEmbeddingModel(modelId, settings, {
+    new OllamaEmbeddingModel(modelId, settings, {
       provider: `${providerName}.embedding`,
       url: ({ path }) => `${baseURL}${path}`,
       headers: getHeaders,
@@ -211,10 +211,10 @@ export function createOpenAI(
     });
 
   const createImageModel = (
-    modelId: OpenAIImageModelId,
-    settings: OpenAIImageSettings = {},
+    modelId: OllamaImageModelId,
+    settings: OllamaImageSettings = {},
   ) =>
-    new OpenAIImageModel(modelId, settings, {
+    new OllamaImageModel(modelId, settings, {
       provider: `${providerName}.image`,
       url: ({ path }) => `${baseURL}${path}`,
       headers: getHeaders,
@@ -222,28 +222,28 @@ export function createOpenAI(
     });
 
   const createLanguageModel = (
-    modelId: OpenAIChatModelId | OpenAICompletionModelId,
-    settings?: OpenAIChatSettings | OpenAICompletionSettings,
+    modelId: OllamaChatModelId | OllamaCompletionModelId,
+    settings?: OllamaChatSettings | OllamaCompletionSettings,
   ) => {
     if (new.target) {
       throw new Error(
-        'The OpenAI model function cannot be called with the new keyword.',
+        'The Ollama model function cannot be called with the new keyword.',
       );
     }
 
     if (modelId === 'gpt-3.5-turbo-instruct') {
       return createCompletionModel(
         modelId,
-        settings as OpenAICompletionSettings,
+        settings as OllamaCompletionSettings,
       );
     }
 
-    return createChatModel(modelId, settings as OpenAIChatSettings);
+    return createChatModel(modelId, settings as OllamaChatSettings);
   };
 
   const provider = function (
-    modelId: OpenAIChatModelId | OpenAICompletionModelId,
-    settings?: OpenAIChatSettings | OpenAICompletionSettings,
+    modelId: OllamaChatModelId | OllamaCompletionModelId,
+    settings?: OllamaChatSettings | OllamaCompletionSettings,
   ) {
     return createLanguageModel(modelId, settings);
   };
@@ -258,12 +258,12 @@ export function createOpenAI(
   provider.image = createImageModel;
   provider.imageModel = createImageModel;
 
-  return provider as OpenAIProvider;
+  return provider as OllamaProvider;
 }
 
 /**
-Default OpenAI provider instance. It uses 'strict' compatibility mode.
+Default Ollama provider instance. It uses 'strict' compatibility mode.
  */
-export const openai = createOpenAI({
-  compatibility: 'strict', // strict for OpenAI API
+export const ollama = createOllama({
+  compatibility: 'strict', // strict for Ollama API
 });

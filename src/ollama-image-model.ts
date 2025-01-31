@@ -5,21 +5,21 @@ import {
   postJsonToApi,
 } from '@ai-sdk/provider-utils';
 import { z } from 'zod';
-import { OpenAIConfig } from './openai-config';
-import { openaiFailedResponseHandler } from './openai-error';
+import { OllamaConfig } from './ollama-config';
+import { ollamaFailedResponseHandler } from './ollama-error';
 import {
-  OpenAIImageModelId,
-  OpenAIImageSettings,
+  OllamaImageModelId,
+  OllamaImageSettings,
   modelMaxImagesPerCall,
-} from './openai-image-settings';
+} from './ollama-image-settings';
 
-interface OpenAIImageModelConfig extends OpenAIConfig {
+interface OllamaImageModelConfig extends OllamaConfig {
   _internal?: {
     currentDate?: () => Date;
   };
 }
 
-export class OpenAIImageModel implements ImageModelV1 {
+export class OllamaImageModel implements ImageModelV1 {
   readonly specificationVersion = 'v1';
 
   get maxImagesPerCall(): number {
@@ -33,9 +33,9 @@ export class OpenAIImageModel implements ImageModelV1 {
   }
 
   constructor(
-    readonly modelId: OpenAIImageModelId,
-    private readonly settings: OpenAIImageSettings,
-    private readonly config: OpenAIImageModelConfig,
+    readonly modelId: OllamaImageModelId,
+    private readonly settings: OllamaImageSettings,
+    private readonly config: OllamaImageModelConfig,
   ) {}
 
   async doGenerate({
@@ -77,12 +77,12 @@ export class OpenAIImageModel implements ImageModelV1 {
         prompt,
         n,
         size,
-        ...(providerOptions.openai ?? {}),
+        ...(providerOptions.ollama ?? {}),
         response_format: 'b64_json',
       },
-      failedResponseHandler: openaiFailedResponseHandler,
+      failedResponseHandler: ollamaFailedResponseHandler,
       successfulResponseHandler: createJsonResponseHandler(
-        openaiImageResponseSchema,
+        ollamaImageResponseSchema,
       ),
       abortSignal,
       fetch: this.config.fetch,
@@ -102,6 +102,6 @@ export class OpenAIImageModel implements ImageModelV1 {
 
 // minimal version of the schema, focussed on what is needed for the implementation
 // this approach limits breakages when the API changes and increases efficiency
-const openaiImageResponseSchema = z.object({
+const ollamaImageResponseSchema = z.object({
   data: z.array(z.object({ b64_json: z.string() })),
 });

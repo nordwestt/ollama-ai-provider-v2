@@ -1,10 +1,10 @@
-export type OpenAIEmbeddingModelId =
+export type OllamaEmbeddingModelId =
   | 'text-embedding-3-small'
   | 'text-embedding-3-large'
   | 'text-embedding-ada-002'
   | (string & {});
 
-export interface OpenAIEmbeddingSettings {
+export interface OllamaEmbeddingSettings {
   /**
 Override the maximum number of embeddings per call.
    */
@@ -22,7 +22,7 @@ Only supported in text-embedding-3 and later models.
   dimensions?: number;
 
   /**
-A unique identifier representing your end-user, which can help OpenAI to
+A unique identifier representing your end-user, which can help Ollama to
 monitor and detect abuse. Learn more.
 */
   user?: string;
