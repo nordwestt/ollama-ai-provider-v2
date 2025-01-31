@@ -612,7 +612,7 @@ export class OllamaChatLanguageModel implements LanguageModelV1 {
                   }
 
                   toolCalls[index] = {
-                    id: index.toString(),
+                    id: generateId(),
                     type: 'function',
                     function: {
                       name: toolCallDelta.function.name,
