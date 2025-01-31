@@ -12,7 +12,7 @@ import {
   FetchFunction,
   ParseResult,
   combineHeaders,
-  createEventSourceResponseHandler,
+  createJsonStreamResponseHandler,
   createJsonResponseHandler,
   generateId,
   isParsableJson,
@@ -510,7 +510,7 @@ export class OllamaChatLanguageModel implements LanguageModelV1 {
       headers: combineHeaders(this.config.headers(), options.headers),
       body,
       failedResponseHandler: ollamaFailedResponseHandler,
-      successfulResponseHandler: createEventSourceResponseHandler(
+      successfulResponseHandler: createJsonStreamResponseHandler(
         ollamaChatChunkSchema,
       ),
       abortSignal: options.abortSignal,
