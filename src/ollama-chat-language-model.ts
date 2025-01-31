@@ -623,6 +623,7 @@ export class OllamaChatLanguageModel implements LanguageModelV1 {
                       message: `Expected 'function.name' to be a string.`,
                     });
                   }
+                  console.log(toolCallDelta.function.arguments)
 
                   toolCalls[index] = {
                     id: generateId(),
@@ -803,8 +804,9 @@ const ollamaChatChunkSchema = z.discriminatedUnion('done',[
       tool_calls: z.array(z.object({
         function: z.object({
           name: z.string(),
-          arguments: z.object({})
-        })
+          arguments: z.record(z.any())
+        }),
+        id: z.string().optional(),
       })).optional().nullable()
     }),
     model: z.string(),
