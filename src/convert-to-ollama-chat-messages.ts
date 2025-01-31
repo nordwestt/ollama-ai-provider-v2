@@ -112,7 +112,7 @@ export function convertToOllamaChatMessages({
         const toolCalls: Array<{
           id: string;
           type: 'function';
-          function: { name: string; arguments: string };
+          function: { name: string; arguments: object };
         }> = [];
 
         for (const part of content) {
@@ -127,7 +127,7 @@ export function convertToOllamaChatMessages({
                 type: 'function',
                 function: {
                   name: part.toolName,
-                  arguments: JSON.stringify(part.args),
+                  arguments: part.args as object,
                 },
               });
               break;
