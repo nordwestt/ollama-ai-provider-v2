@@ -575,99 +575,34 @@ export class OllamaChatLanguageModel implements LanguageModelV1 {
               });
             }
 
-            if (value.usage != null) {
-              const {
-                prompt_tokens,
-                completion_tokens,
-                prompt_tokens_details,
-                completion_tokens_details,
-              } = value.usage;
-
+            if(value?.done){
+              finishReason = mapOllamaFinishReason("other");
               usage = {
-                promptTokens: prompt_tokens ?? undefined,
-                completionTokens: completion_tokens ?? undefined,
+                promptTokens: value.prompt_eval_count || 0,
+                completionTokens: value.eval_count ?? undefined,
               };
-
-              if (completion_tokens_details?.reasoning_tokens != null) {
-                providerMetadata.ollama.reasoningTokens =
-                  completion_tokens_details?.reasoning_tokens;
-              }
-              if (
-                completion_tokens_details?.accepted_prediction_tokens != null
-              ) {
-                providerMetadata.ollama.acceptedPredictionTokens =
-                  completion_tokens_details?.accepted_prediction_tokens;
-              }
-              if (
-                completion_tokens_details?.rejected_prediction_tokens != null
-              ) {
-                providerMetadata.ollama.rejectedPredictionTokens =
-                  completion_tokens_details?.rejected_prediction_tokens;
-              }
-              if (prompt_tokens_details?.cached_tokens != null) {
-                providerMetadata.ollama.cachedPromptTokens =
-                  prompt_tokens_details?.cached_tokens;
-              }
-            }
-
-            const choice = value.choices[0];
-
-            if (choice?.finish_reason != null) {
-              finishReason = mapOllamaFinishReason(choice.finish_reason);
-            }
-
-            if (choice?.delta == null) {
               return;
             }
+            const delta = value?.message;
+            console.log("delta",delta);
 
-            const delta = choice.delta;
-
-            if (delta.content != null) {
+            if (delta?.content != null) {
               controller.enqueue({
                 type: 'text-delta',
                 textDelta: delta.content,
               });
             }
 
-            const mappedLogprobs = mapOllamaChatLogProbsOutput(
-              choice?.logprobs,
-            );
-            if (mappedLogprobs?.length) {
-              if (logprobs === undefined) logprobs = [];
-              logprobs.push(...mappedLogprobs);
-            }
-
-            const mappedToolCalls: typeof delta.tool_calls =
-              useLegacyFunctionCalling && delta.function_call != null
-                ? [
-                    {
-                      type: 'function',
-                      id: generateId(),
-                      function: delta.function_call,
-                      index: 0,
-                    },
-                  ]
-                : delta.tool_calls;
+            const mappedToolCalls: typeof delta.tool_calls = delta.tool_calls;
 
             if (mappedToolCalls != null) {
+              let i = 0;
               for (const toolCallDelta of mappedToolCalls) {
-                const index = toolCallDelta.index;
+                const index = i;
+                i += 1;
 
                 // Tool call start. Ollama returns all information except the arguments in the first chunk.
                 if (toolCalls[index] == null) {
-                  if (toolCallDelta.type !== 'function') {
-                    throw new InvalidResponseDataError({
-                      data: toolCallDelta,
-                      message: `Expected 'function' type.`,
-                    });
-                  }
-
-                  if (toolCallDelta.id == null) {
-                    throw new InvalidResponseDataError({
-                      data: toolCallDelta,
-                      message: `Expected 'id' to be a string.`,
-                    });
-                  }
 
                   if (toolCallDelta.function?.name == null) {
                     throw new InvalidResponseDataError({
@@ -677,11 +612,11 @@ export class OllamaChatLanguageModel implements LanguageModelV1 {
                   }
 
                   toolCalls[index] = {
-                    id: toolCallDelta.id,
+                    id: index.toString(),
                     type: 'function',
                     function: {
                       name: toolCallDelta.function.name,
-                      arguments: toolCallDelta.function.arguments ?? '',
+                      arguments: JSON.stringify(toolCallDelta.function.arguments),
                     },
                     hasFinished: false,
                   };
@@ -720,42 +655,42 @@ export class OllamaChatLanguageModel implements LanguageModelV1 {
                   continue;
                 }
 
-                // existing tool call, merge if not finished
-                const toolCall = toolCalls[index];
+                // // existing tool call, merge if not finished
+                // const toolCall = toolCalls[index];
 
-                if (toolCall.hasFinished) {
-                  continue;
-                }
+                // if (toolCall.hasFinished) {
+                //   continue;
+                // }
 
-                if (toolCallDelta.function?.arguments != null) {
-                  toolCall.function!.arguments +=
-                    toolCallDelta.function?.arguments ?? '';
-                }
+                // if (toolCallDelta.function?.arguments != null) {
+                //   toolCall.function!.arguments +=
+                //     toolCallDelta.function?.arguments ?? '';
+                // }
 
-                // send delta
-                controller.enqueue({
-                  type: 'tool-call-delta',
-                  toolCallType: 'function',
-                  toolCallId: toolCall.id,
-                  toolName: toolCall.function.name,
-                  argsTextDelta: toolCallDelta.function.arguments ?? '',
-                });
+                // // send delta
+                // controller.enqueue({
+                //   type: 'tool-call-delta',
+                //   toolCallType: 'function',
+                //   toolCallId: toolCall.id,
+                //   toolName: toolCall.function.name,
+                //   argsTextDelta: toolCallDelta.function.arguments ?? '',
+                // });
 
-                // check if tool call is complete
-                if (
-                  toolCall.function?.name != null &&
-                  toolCall.function?.arguments != null &&
-                  isParsableJson(toolCall.function.arguments)
-                ) {
-                  controller.enqueue({
-                    type: 'tool-call',
-                    toolCallType: 'function',
-                    toolCallId: toolCall.id ?? generateId(),
-                    toolName: toolCall.function.name,
-                    args: toolCall.function.arguments,
-                  });
-                  toolCall.hasFinished = true;
-                }
+                // // check if tool call is complete
+                // if (
+                //   toolCall.function?.name != null &&
+                //   toolCall.function?.arguments != null &&
+                //   isParsableJson(toolCall.function.arguments)
+                // ) {
+                //   controller.enqueue({
+                //     type: 'tool-call',
+                //     toolCallType: 'function',
+                //     toolCallId: toolCall.id ?? generateId(),
+                //     toolName: toolCall.function.name,
+                //     args: toolCall.function.arguments,
+                //   });
+                //   toolCall.hasFinished = true;
+                // }
               }
             }
           },
@@ -861,6 +796,19 @@ const ollamaChatResponseSchema = z.object({
 const ollamaChatChunkSchema = z.union([
   z.object({
     id: z.string().nullish(),
+    done: z.string().nullish(),
+    prompt_eval_count: z.number().nullish(),
+    message: z.object({
+      content: z.string(),
+      role: z.string(),
+      tool_calls: z.array(z.object({
+        function: z.object({
+          name: z.string(),
+          arguments: z.object({})
+        })
+      }))
+    }),
+    eval_count: z.number().nullish(),
     created: z.number().nullish(),
     model: z.string().nullish(),
     choices: z.array(
