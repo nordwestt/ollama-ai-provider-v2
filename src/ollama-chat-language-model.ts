@@ -805,7 +805,7 @@ const ollamaChatChunkSchema = z.discriminatedUnion('done',[
           name: z.string(),
           arguments: z.object({})
         })
-      }))
+      })).optional().nullable()
     }),
     model: z.string(),
   }),
