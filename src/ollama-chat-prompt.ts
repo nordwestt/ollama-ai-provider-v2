@@ -47,6 +47,7 @@ export interface ChatCompletionAssistantMessage {
   role: 'assistant';
   content?: string | null;
   tool_calls?: Array<ChatCompletionMessageToolCall>;
+  images?: Array<string>;
   /**
    * Legacy function calling interface.
    * @deprecated this API is supported but deprecated by Ollama.
@@ -61,7 +62,7 @@ export interface ChatCompletionMessageToolCall {
   type: 'function';
   id: string;
   function: {
-    arguments: string;
+    arguments: object;
     name: string;
   };
 }

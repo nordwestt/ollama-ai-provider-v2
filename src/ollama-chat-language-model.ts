@@ -366,7 +366,7 @@ export class OllamaChatLanguageModel implements LanguageModelV1 {
 
     const { responseHeaders, value: response } = await postJsonToApi({
       url: this.config.url({
-        path: '/chat/completions',
+        path: '/chat',
         modelId: this.modelId,
       }),
       headers: combineHeaders(this.config.headers(), options.headers),
@@ -419,7 +419,7 @@ export class OllamaChatLanguageModel implements LanguageModelV1 {
               toolCallType: 'function',
               toolCallId: toolCall.id ?? generateId(),
               toolName: toolCall.function.name,
-              args: toolCall.function.arguments!,
+              args: JSON.stringify(toolCall.function.arguments),
             })),
       finishReason: mapOllamaFinishReason(choice.finish_reason),
       usage: {
@@ -503,7 +503,7 @@ export class OllamaChatLanguageModel implements LanguageModelV1 {
 
     const { responseHeaders, value: response } = await postJsonToApi({
       url: this.config.url({
-        path: '/chat/completions',
+        path: '/chat',
         modelId: this.modelId,
       }),
       headers: combineHeaders(this.config.headers(), options.headers),

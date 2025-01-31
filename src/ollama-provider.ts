@@ -6,7 +6,6 @@ import {
 } from '@ai-sdk/provider';
 import {
   FetchFunction,
-  loadApiKey,
   withoutTrailingSlash,
 } from '@ai-sdk/provider-utils';
 import { OllamaChatLanguageModel } from './ollama-chat-language-model';
@@ -112,11 +111,6 @@ Base URL for the Ollama API calls.
   baseURL?: string;
 
   /**
-API key for authenticating requests.
-     */
-  apiKey?: string;
-
-  /**
 Ollama Organization.
      */
   organization?: string;
@@ -157,7 +151,7 @@ export function createOllama(
   options: OllamaProviderSettings = {},
 ): OllamaProvider {
   const baseURL =
-    withoutTrailingSlash(options.baseURL) ?? 'https://api.ollama.com/v1';
+    withoutTrailingSlash(options.baseURL) ?? 'http://127.0.0.1:11434/api';
 
   // we default to compatible, because strict breaks providers like Groq:
   const compatibility = options.compatibility ?? 'compatible';
@@ -165,11 +159,6 @@ export function createOllama(
   const providerName = options.name ?? 'ollama';
 
   const getHeaders = () => ({
-    Authorization: `Bearer ${loadApiKey({
-      apiKey: options.apiKey,
-      environmentVariableName: 'OPENAI_API_KEY',
-      description: 'Ollama',
-    })}`,
     'Ollama-Organization': options.organization,
     'Ollama-Project': options.project,
     ...options.headers,
