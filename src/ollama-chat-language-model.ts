@@ -537,12 +537,8 @@ export class OllamaChatLanguageModel implements LanguageModelV1 {
       promptTokens: undefined,
       completionTokens: undefined,
     };
-    let logprobs: LanguageModelV1LogProbs;
     let isFirstChunk = true;
 
-    const { useLegacyFunctionCalling } = this.settings;
-
-    const providerMetadata: LanguageModelV1ProviderMetadata = { ollama: {} };
     console.log("Reached here 1");
 
     return {
@@ -551,6 +547,16 @@ export class OllamaChatLanguageModel implements LanguageModelV1 {
           ParseResult<z.infer<typeof ollamaChatChunkSchema>>,
           LanguageModelV1StreamPart
         >({
+          flush(controller) {
+            controller.enqueue({
+              type: 'finish',
+              finishReason,
+              usage: {
+                promptTokens: usage.promptTokens ?? NaN,
+                completionTokens: usage.completionTokens ?? NaN,
+              },
+            });
+          },
           transform(chunk, controller) {
             // handle failed chunk parsing / validation:
             console.log("Reached here 2");
@@ -582,7 +588,7 @@ export class OllamaChatLanguageModel implements LanguageModelV1 {
 
             console.log("Reached here 5");
 
-            if(value?.done){
+            if(value.done){
               finishReason = mapOllamaFinishReason("other");
               usage = {
                 promptTokens: value.prompt_eval_count || 0,
@@ -701,19 +707,6 @@ export class OllamaChatLanguageModel implements LanguageModelV1 {
               }
             }
           },
-
-          flush(controller) {
-            controller.enqueue({
-              type: 'finish',
-              finishReason,
-              logprobs,
-              usage: {
-                promptTokens: usage.promptTokens ?? NaN,
-                completionTokens: usage.completionTokens ?? NaN,
-              },
-              ...(providerMetadata != null ? { providerMetadata } : {}),
-            });
-          },
         }),
       ),
       rawCall: { rawPrompt, rawSettings },
@@ -800,11 +793,10 @@ const ollamaChatResponseSchema = z.object({
 
 // limited version of the schema, focussed on what is needed for the implementation
 // this approach limits breakages when the API changes and increases efficiency
-const ollamaChatChunkSchema = z.union([
+const ollamaChatChunkSchema = z.discriminatedUnion('done',[
   z.object({
-    id: z.string().nullish(),
-    done: z.string().nullish(),
-    prompt_eval_count: z.number().nullish(),
+    created_at: z.string(),
+    done: z.literal(false),
     message: z.object({
       content: z.string(),
       role: z.string(),
@@ -815,61 +807,19 @@ const ollamaChatChunkSchema = z.union([
         })
       }))
     }),
-    eval_count: z.number().nullish(),
-    created: z.number().nullish(),
-    model: z.string().nullish(),
-    choices: z.array(
-      z.object({
-        delta: z
-          .object({
-            role: z.enum(['assistant']).nullish(),
-            content: z.string().nullish(),
-            function_call: z
-              .object({
-                name: z.string().optional(),
-                arguments: z.string().optional(),
-              })
-              .nullish(),
-            tool_calls: z
-              .array(
-                z.object({
-                  index: z.number(),
-                  id: z.string().nullish(),
-                  type: z.literal('function').optional(),
-                  function: z.object({
-                    name: z.string().nullish(),
-                    arguments: z.string().nullish(),
-                  }),
-                }),
-              )
-              .nullish(),
-          })
-          .nullish(),
-        logprobs: z
-          .object({
-            content: z
-              .array(
-                z.object({
-                  token: z.string(),
-                  logprob: z.number(),
-                  top_logprobs: z.array(
-                    z.object({
-                      token: z.string(),
-                      logprob: z.number(),
-                    }),
-                  ),
-                }),
-              )
-              .nullable(),
-          })
-          .nullish(),
-        finish_reason: z.string().nullable().optional(),
-        index: z.number(),
-      }),
-    ),
-    usage: ollamaTokenUsageSchema,
+    model: z.string(),
   }),
-  ollamaErrorDataSchema,
+  z.object({
+    created_at: z.string(),
+    done: z.literal(true),
+    eval_count: z.number(),
+    eval_duration: z.number(),
+    load_duration: z.number().optional(),
+    model: z.string(),
+    prompt_eval_count: z.number().optional(),
+    prompt_eval_duration: z.number().optional(),
+    total_duration: z.number(),
+  }),
 ]);
 
 function isReasoningModel(modelId: string) {
