@@ -665,45 +665,7 @@ export class OllamaChatLanguageModel implements LanguageModelV1 {
                     }
                   }
 
-                  continue;
                 }
-
-                // // existing tool call, merge if not finished
-                // const toolCall = toolCalls[index];
-
-                // if (toolCall.hasFinished) {
-                //   continue;
-                // }
-
-                // if (toolCallDelta.function?.arguments != null) {
-                //   toolCall.function!.arguments +=
-                //     toolCallDelta.function?.arguments ?? '';
-                // }
-
-                // // send delta
-                // controller.enqueue({
-                //   type: 'tool-call-delta',
-                //   toolCallType: 'function',
-                //   toolCallId: toolCall.id,
-                //   toolName: toolCall.function.name,
-                //   argsTextDelta: toolCallDelta.function.arguments ?? '',
-                // });
-
-                // // check if tool call is complete
-                // if (
-                //   toolCall.function?.name != null &&
-                //   toolCall.function?.arguments != null &&
-                //   isParsableJson(toolCall.function.arguments)
-                // ) {
-                //   controller.enqueue({
-                //     type: 'tool-call',
-                //     toolCallType: 'function',
-                //     toolCallId: toolCall.id ?? generateId(),
-                //     toolName: toolCall.function.name,
-                //     args: toolCall.function.arguments,
-                //   });
-                //   toolCall.hasFinished = true;
-                // }
               }
             }
           },
