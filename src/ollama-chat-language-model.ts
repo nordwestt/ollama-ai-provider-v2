@@ -594,7 +594,6 @@ export class OllamaChatLanguageModel implements LanguageModelV1 {
                 promptTokens: value.prompt_eval_count || 0,
                 completionTokens: value.eval_count ?? undefined,
               };
-              return;
             }
             const delta = value?.message;
             console.log("delta",delta);
@@ -794,10 +793,9 @@ const ollamaChatResponseSchema = z.object({
 
 // limited version of the schema, focussed on what is needed for the implementation
 // this approach limits breakages when the API changes and increases efficiency
-const ollamaChatChunkSchema = z.discriminatedUnion('done',[
-  z.object({
+const ollamaChatChunkSchema = z.object({
     created_at: z.string(),
-    done: z.literal(false),
+    done: z.boolean(),
     message: z.object({
       content: z.string(),
       role: z.string(),
@@ -810,20 +808,15 @@ const ollamaChatChunkSchema = z.discriminatedUnion('done',[
       })).optional().nullable()
     }),
     model: z.string(),
-  }),
-  z.object({
-    created_at: z.string(),
-    done: z.literal(true),
-    done_reason: z.string(),
-    eval_count: z.number(),
-    eval_duration: z.number(),
+
+    done_reason: z.string().optional(),
+    eval_count: z.number().optional(),
+    eval_duration: z.number().optional(),
     load_duration: z.number().optional(),
-    model: z.string(),
     prompt_eval_count: z.number().optional(),
     prompt_eval_duration: z.number().optional(),
-    total_duration: z.number(),
-  }),
-]);
+    total_duration: z.number().optional(),
+  });
 
 function isReasoningModel(modelId: string) {
   return (
