@@ -405,17 +405,7 @@ export class OllamaChatLanguageModel implements LanguageModelV1 {
 
     return {
       text: choice.message.content ?? undefined,
-      toolCalls:
-        this.settings.useLegacyFunctionCalling && choice.message.function_call
-          ? [
-              {
-                toolCallType: 'function',
-                toolCallId: generateId(),
-                toolName: choice.message.function_call.name,
-                args: choice.message.function_call.arguments,
-              },
-            ]
-          : choice.message.tool_calls?.map(toolCall => ({
+      toolCalls: choice.message.tool_calls?.map(toolCall => ({
               toolCallType: 'function',
               toolCallId: toolCall.id ?? generateId(),
               toolName: toolCall.function.name,
@@ -439,7 +429,6 @@ export class OllamaChatLanguageModel implements LanguageModelV1 {
   async doStream(
     options: Parameters<LanguageModelV1['doStream']>[0],
   ): Promise<Awaited<ReturnType<LanguageModelV1['doStream']>>> {
-    console.log("Nowwww we're debugging!", this.settings);
     if (
       this.settings.simulateStreaming ??
       isStreamingSimulatedByDefault(this.modelId)
@@ -511,23 +500,13 @@ export class OllamaChatLanguageModel implements LanguageModelV1 {
       body,
       failedResponseHandler: ollamaFailedResponseHandler,
       successfulResponseHandler: createJsonStreamResponseHandler(
-        ollamaChatChunkSchema,
+        baseOllamaResponseSchema,
       ),
       abortSignal: options.abortSignal,
       fetch: this.config.fetch,
     });
 
     const { messages: rawPrompt, ...rawSettings } = args;
-
-    const toolCalls: Array<{
-      id: string;
-      type: 'function';
-      function: {
-        name: string;
-        arguments: string;
-      };
-      hasFinished: boolean;
-    }> = [];
 
     let finishReason: LanguageModelV1FinishReason = 'unknown';
     let usage: {
@@ -544,7 +523,7 @@ export class OllamaChatLanguageModel implements LanguageModelV1 {
     return {
       stream: response.pipeThrough(
         new TransformStream<
-          ParseResult<z.infer<typeof ollamaChatChunkSchema>>,
+          ParseResult<z.infer<typeof baseOllamaResponseSchema>>,
           LanguageModelV1StreamPart
         >({
           flush(controller) {
@@ -673,6 +652,31 @@ const ollamaTokenUsageSchema = z
   })
   .nullish();
 
+const baseOllamaResponseSchema = z.object({
+  model: z.string(),
+  created_at: z.string(),
+  done: z.boolean(),
+  message: z.object({
+    content: z.string(),
+    role: z.string(),
+    tool_calls: z.array(z.object({
+      function: z.object({
+        name: z.string(),
+        arguments: z.record(z.any())
+      }),
+      id: z.string().optional(),
+    })).optional().nullable()
+  }),
+  
+  done_reason: z.string().optional(),
+  eval_count: z.number().optional(),
+  eval_duration: z.number().optional(),
+  load_duration: z.number().optional(),
+  prompt_eval_count: z.number().optional(),
+  prompt_eval_duration: z.number().optional(),
+  total_duration: z.number().optional(),
+});
+
 // limited version of the schema, focussed on what is needed for the implementation
 // this approach limits breakages when the API changes and increases efficiency
 const ollamaChatResponseSchema = z.object({
@@ -727,33 +731,6 @@ const ollamaChatResponseSchema = z.object({
   ),
   usage: ollamaTokenUsageSchema,
 });
-
-// limited version of the schema, focussed on what is needed for the implementation
-// this approach limits breakages when the API changes and increases efficiency
-const ollamaChatChunkSchema = z.object({
-    created_at: z.string(),
-    done: z.boolean(),
-    message: z.object({
-      content: z.string(),
-      role: z.string(),
-      tool_calls: z.array(z.object({
-        function: z.object({
-          name: z.string(),
-          arguments: z.record(z.any())
-        }),
-        id: z.string().optional(),
-      })).optional().nullable()
-    }),
-    model: z.string(),
-
-    done_reason: z.string().optional(),
-    eval_count: z.number().optional(),
-    eval_duration: z.number().optional(),
-    load_duration: z.number().optional(),
-    prompt_eval_count: z.number().optional(),
-    prompt_eval_duration: z.number().optional(),
-    total_duration: z.number().optional(),
-  });
 
 function isReasoningModel(modelId: string) {
   return (
