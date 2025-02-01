@@ -370,58 +370,39 @@ export class OllamaChatLanguageModel implements LanguageModelV1 {
         modelId: this.modelId,
       }),
       headers: combineHeaders(this.config.headers(), options.headers),
-      body,
+      body: {...body, stream:false},
       failedResponseHandler: ollamaFailedResponseHandler,
       successfulResponseHandler: createJsonResponseHandler(
-        ollamaChatResponseSchema,
+        baseOllamaResponseSchema,
       ),
       abortSignal: options.abortSignal,
       fetch: this.config.fetch,
     });
 
     const { messages: rawPrompt, ...rawSettings } = body;
-    const choice = response.choices[0];
 
     // provider metadata:
-    const completionTokenDetails = response.usage?.completion_tokens_details;
-    const promptTokenDetails = response.usage?.prompt_tokens_details;
     const providerMetadata: LanguageModelV1ProviderMetadata = { ollama: {} };
-    if (completionTokenDetails?.reasoning_tokens != null) {
-      providerMetadata.ollama.reasoningTokens =
-        completionTokenDetails?.reasoning_tokens;
-    }
-    if (completionTokenDetails?.accepted_prediction_tokens != null) {
-      providerMetadata.ollama.acceptedPredictionTokens =
-        completionTokenDetails?.accepted_prediction_tokens;
-    }
-    if (completionTokenDetails?.rejected_prediction_tokens != null) {
-      providerMetadata.ollama.rejectedPredictionTokens =
-        completionTokenDetails?.rejected_prediction_tokens;
-    }
-    if (promptTokenDetails?.cached_tokens != null) {
-      providerMetadata.ollama.cachedPromptTokens =
-        promptTokenDetails?.cached_tokens;
-    }
 
     return {
-      text: choice.message.content ?? undefined,
-      toolCalls: choice.message.tool_calls?.map(toolCall => ({
+      text: response.message.content ?? undefined,
+      toolCalls: response.message.tool_calls?.map(toolCall => ({
               toolCallType: 'function',
               toolCallId: toolCall.id ?? generateId(),
               toolName: toolCall.function.name,
               args: JSON.stringify(toolCall.function.arguments),
             })),
-      finishReason: mapOllamaFinishReason(choice.finish_reason),
+      finishReason: mapOllamaFinishReason(response.done_reason),
       usage: {
-        promptTokens: response.usage?.prompt_tokens ?? NaN,
-        completionTokens: response.usage?.completion_tokens ?? NaN,
+        promptTokens: response.prompt_eval_count ?? NaN,
+        completionTokens: response.eval_count ?? NaN,
       },
       rawCall: { rawPrompt, rawSettings },
       rawResponse: { headers: responseHeaders },
       request: { body: JSON.stringify(body) },
       response: getResponseMetadata(response),
       warnings,
-      logprobs: mapOllamaChatLogProbsOutput(choice.logprobs),
+      logprobs: undefined,
       providerMetadata,
     };
   }
@@ -675,61 +656,6 @@ const baseOllamaResponseSchema = z.object({
   prompt_eval_count: z.number().optional(),
   prompt_eval_duration: z.number().optional(),
   total_duration: z.number().optional(),
-});
-
-// limited version of the schema, focussed on what is needed for the implementation
-// this approach limits breakages when the API changes and increases efficiency
-const ollamaChatResponseSchema = z.object({
-  id: z.string().nullish(),
-  created: z.number().nullish(),
-  model: z.string().nullish(),
-  choices: z.array(
-    z.object({
-      message: z.object({
-        role: z.literal('assistant').nullish(),
-        content: z.string().nullish(),
-        function_call: z
-          .object({
-            arguments: z.string(),
-            name: z.string(),
-          })
-          .nullish(),
-        tool_calls: z
-          .array(
-            z.object({
-              id: z.string().nullish(),
-              type: z.literal('function'),
-              function: z.object({
-                name: z.string(),
-                arguments: z.string(),
-              }),
-            }),
-          )
-          .nullish(),
-      }),
-      index: z.number(),
-      logprobs: z
-        .object({
-          content: z
-            .array(
-              z.object({
-                token: z.string(),
-                logprob: z.number(),
-                top_logprobs: z.array(
-                  z.object({
-                    token: z.string(),
-                    logprob: z.number(),
-                  }),
-                ),
-              }),
-            )
-            .nullable(),
-        })
-        .nullish(),
-      finish_reason: z.string().nullish(),
-    }),
-  ),
-  usage: ollamaTokenUsageSchema,
 });
 
 function isReasoningModel(modelId: string) {
