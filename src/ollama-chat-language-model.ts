@@ -605,67 +605,42 @@ export class OllamaChatLanguageModel implements LanguageModelV1 {
               });
             }
 
-            const mappedToolCalls: typeof delta.tool_calls = delta.tool_calls;
+            for (const toolCall of delta.tool_calls ?? []) {
+              console.log("Tool Call!", toolCall)
 
-            if (mappedToolCalls != null) {
-              let i = 0;
-              for (const toolCallDelta of mappedToolCalls) {
-                const index = i;
-                i += 1;
+              // Tool call start. Ollama returns all information except the arguments in the first chunk.
+              if (toolCall.function?.name == null) {
+                console.log("Reached here 6")
 
-                // Tool call start. Ollama returns all information except the arguments in the first chunk.
-                if (toolCalls[index] == null) {
+                throw new InvalidResponseDataError({
+                  data: toolCall,
+                  message: `Expected 'function.name' to be a string.`,
+                });
+              }
 
-                  if (toolCallDelta.function?.name == null) {
-                    throw new InvalidResponseDataError({
-                      data: toolCallDelta,
-                      message: `Expected 'function.name' to be a string.`,
-                    });
-                  }
-                  console.log(toolCallDelta.function.arguments)
+              if (
+                toolCall.function?.name != null &&
+                toolCall.function?.arguments != null && Object.keys(toolCall.function.arguments).length > 0
+              ) {
 
-                  toolCalls[index] = {
-                    id: generateId(),
-                    type: 'function',
-                    function: {
-                      name: toolCallDelta.function.name,
-                      arguments: JSON.stringify(toolCallDelta.function.arguments),
-                    },
-                    hasFinished: false,
-                  };
+                console.log("Reached here 7")
+                const id = generateId();
 
-                  const toolCall = toolCalls[index];
+                controller.enqueue({
+                  type: 'tool-call-delta',
+                  toolCallType: 'function',
+                  toolCallId: id,
+                  toolName: toolCall.function.name,
+                  argsTextDelta: JSON.stringify(toolCall.function.arguments),
+                });
 
-                  if (
-                    toolCall.function?.name != null &&
-                    toolCall.function?.arguments != null
-                  ) {
-                    // send delta if the argument text has already started:
-                    if (toolCall.function.arguments.length > 0) {
-                      controller.enqueue({
-                        type: 'tool-call-delta',
-                        toolCallType: 'function',
-                        toolCallId: toolCall.id,
-                        toolName: toolCall.function.name,
-                        argsTextDelta: toolCall.function.arguments,
-                      });
-                    }
-
-                    // check if tool call is complete
-                    // (some providers send the full tool call in one chunk):
-                    if (isParsableJson(toolCall.function.arguments)) {
-                      controller.enqueue({
-                        type: 'tool-call',
-                        toolCallType: 'function',
-                        toolCallId: toolCall.id ?? generateId(),
-                        toolName: toolCall.function.name,
-                        args: toolCall.function.arguments,
-                      });
-                      toolCall.hasFinished = true;
-                    }
-                  }
-
-                }
+                controller.enqueue({
+                  type: 'tool-call',
+                  toolCallType: 'function',
+                  toolCallId: id,
+                  toolName: toolCall.function.name,
+                  args: JSON.stringify(toolCall.function.arguments),
+                });
               }
             }
           },
