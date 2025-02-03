@@ -177,7 +177,7 @@ export class OllamaCompletionLanguageModel implements LanguageModelV1 {
         modelId: this.modelId,
       }),
       headers: combineHeaders(this.config.headers(), options.headers),
-      body: args,
+      body: {args, stream: false},
       failedResponseHandler: ollamaFailedResponseHandler,
       successfulResponseHandler: createJsonResponseHandler(
         baseOllamaResponseSchema,
@@ -231,7 +231,7 @@ export class OllamaCompletionLanguageModel implements LanguageModelV1 {
       body,
       failedResponseHandler: ollamaFailedResponseHandler,
       successfulResponseHandler: createEventSourceResponseHandler(
-        ollamaCompletionChunkSchema,
+        baseOllamaResponseSchema,
       ),
       abortSignal: options.abortSignal,
       fetch: this.config.fetch,
@@ -250,7 +250,7 @@ export class OllamaCompletionLanguageModel implements LanguageModelV1 {
     return {
       stream: response.pipeThrough(
         new TransformStream<
-          ParseResult<z.infer<typeof ollamaCompletionChunkSchema>>,
+          ParseResult<z.infer<typeof baseOllamaResponseSchema>>,
           LanguageModelV1StreamPart
         >({
           transform(chunk, controller) {
@@ -279,33 +279,17 @@ export class OllamaCompletionLanguageModel implements LanguageModelV1 {
               });
             }
 
-            if (value.usage != null) {
-              usage = {
-                promptTokens: value.usage.prompt_tokens,
-                completionTokens: value.usage.completion_tokens,
-              };
+            if (value.done) {
+              finishReason = mapOllamaFinishReason('stop');
             }
 
-            const choice = value.choices[0];
-
-            if (choice?.finish_reason != null) {
-              finishReason = mapOllamaFinishReason(choice.finish_reason);
-            }
-
-            if (choice?.text != null) {
+            if (value.response != null) {
               controller.enqueue({
                 type: 'text-delta',
-                textDelta: choice.text,
+                textDelta: value.response,
               });
             }
 
-            const mappedLogprobs = mapOllamaCompletionLogProbs(
-              choice?.logprobs,
-            );
-            if (mappedLogprobs?.length) {
-              if (logprobs === undefined) logprobs = [];
-              logprobs.push(...mappedLogprobs);
-            }
           },
 
           flush(controller) {
