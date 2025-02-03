@@ -180,23 +180,22 @@ export class OllamaCompletionLanguageModel implements LanguageModelV1 {
       body: args,
       failedResponseHandler: ollamaFailedResponseHandler,
       successfulResponseHandler: createJsonResponseHandler(
-        ollamaCompletionResponseSchema,
+        baseOllamaResponseSchema,
       ),
       abortSignal: options.abortSignal,
       fetch: this.config.fetch,
     });
 
     const { prompt: rawPrompt, ...rawSettings } = args;
-    const choice = response.choices[0];
 
     return {
-      text: choice.text,
+      text: response.response,
       usage: {
-        promptTokens: response.usage.prompt_tokens,
-        completionTokens: response.usage.completion_tokens,
+        promptTokens: response.prompt_eval_count??0,
+        completionTokens: response.eval_count??0,
       },
-      finishReason: mapOllamaFinishReason(choice.finish_reason),
-      logprobs: mapOllamaCompletionLogProbs(choice.logprobs),
+      finishReason: mapOllamaFinishReason('stop'),
+      logprobs: mapOllamaCompletionLogProbs(null),
       rawCall: { rawPrompt, rawSettings },
       rawResponse: { headers: responseHeaders },
       response: getResponseMetadata(response),
@@ -326,6 +325,23 @@ export class OllamaCompletionLanguageModel implements LanguageModelV1 {
     };
   }
 }
+
+const baseOllamaResponseSchema = z.object({
+  model: z.string(),
+  created_at: z.string(),
+  response: z.string(),
+  done: z.boolean(),
+  context: z.array(z.number()),
+
+  eval_count: z.number().optional(),
+  eval_duration: z.number().optional(),
+  
+  load_duration: z.number().optional(),
+  total_duration: z.number().optional(),
+
+  prompt_eval_count: z.number().optional(),
+  prompt_eval_duration: z.number().optional(),
+});
 
 // limited version of the schema, focussed on what is needed for the implementation
 // this approach limits breakages when the API changes and increases efficiency
