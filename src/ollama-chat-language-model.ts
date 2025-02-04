@@ -384,6 +384,9 @@ export class OllamaChatLanguageModel implements LanguageModelV1 {
     // provider metadata:
     const providerMetadata: LanguageModelV1ProviderMetadata = { ollama: {} };
 
+    console.log("Response!", response)
+
+
     return {
       text: response.message.content ?? undefined,
       toolCalls: response.message.tool_calls?.map(toolCall => ({

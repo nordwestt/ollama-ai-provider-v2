@@ -173,7 +173,7 @@ export class OllamaCompletionLanguageModel implements LanguageModelV1 {
 
     const { responseHeaders, value: response } = await postJsonToApi({
       url: this.config.url({
-        path: '/completions',
+        path: '/generate',
         modelId: this.modelId,
       }),
       headers: combineHeaders(this.config.headers(), options.headers),
@@ -224,7 +224,7 @@ export class OllamaCompletionLanguageModel implements LanguageModelV1 {
 
     const { responseHeaders, value: response } = await postJsonToApi({
       url: this.config.url({
-        path: '/completions',
+        path: '/generate',
         modelId: this.modelId,
       }),
       headers: combineHeaders(this.config.headers(), options.headers),
