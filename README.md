@@ -1,36 +1,37 @@
-# AI SDK - Ollama Provider
+# Ollama Provider V2 for the Vercel AI SDK
 
-The **[Ollama provider](https://sdk.vercel.ai/providers/ai-sdk-providers/ollama)** for the [AI SDK](https://sdk.vercel.ai/docs)
-contains language model support for the Ollama chat and completion APIs and embedding model support for the Ollama embeddings API.
+The **[Ollama Provider V2](https://github.com/nordwestt/ollama-ai-provider-v2)** for the [AI SDK](https://sdk.vercel.ai/docs) has been created as the original [ollama-ai-provider](https://www.npmjs.com/package/ollama-ai-provider) was not being actively maintained. 
+
+This provider now supports tool streaming and calling for models. 
 
 ## Setup
 
-The Ollama provider is available in the `@ai-sdk/ollama` module. You can install it with
+The Ollama provider is available in the `ollama-ai-provider-v2` module. You can install it with
 
 ```bash
-npm i @ai-sdk/ollama
+npm i ollama-ai-provider-v2
 ```
 
 ## Provider Instance
 
-You can import the default provider instance `ollama` from `@ai-sdk/ollama`:
+You can import the default provider instance `ollama` from `ollama-ai-provider-v2`:
 
 ```ts
-import { ollama } from '@ai-sdk/ollama';
+import { ollama } from 'ollama-ai-provider-v2';
 ```
 
 ## Example
 
 ```ts
-import { ollama } from '@ai-sdk/ollama';
+import { ollama } from 'ollama-ai-provider';
 import { generateText } from 'ai';
 
 const { text } = await generateText({
-  model: ollama('gpt-4-turbo'),
-  prompt: 'Write a vegetarian lasagna recipe for 4 people.',
+  model: ollama('llama3.2:latest'),
+  prompt: 'Write a meaty lasagna recipe for 4 people.',
 });
 ```
 
 ## Documentation
 
-Please check out the **[Ollama provider documentation](https://sdk.vercel.ai/providers/ai-sdk-providers/ollama)** for more information.
+Please check out the **[Ollama provider documentation](https://github.com/nordwestt/ollama-ai-provider-v2)** for more information.
