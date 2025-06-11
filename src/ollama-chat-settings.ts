@@ -34,6 +34,8 @@ export type OllamaChatModelId =
 | 'deepseek-coder-v2:236b'
 | 'deepseek-v3'
 | 'deepseek-v3:671b'
+| 'devstral'
+| 'devstral:24b'
 | 'dolphin3'
 | 'dolphin3:8b'
 | 'exaone3.5'
