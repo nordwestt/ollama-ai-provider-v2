@@ -2,7 +2,9 @@
 
 The **[Ollama Provider V2](https://github.com/nordwestt/ollama-ai-provider-v2)** for the [AI SDK](https://sdk.vercel.ai/docs) has been created as the original [ollama-ai-provider](https://www.npmjs.com/package/ollama-ai-provider) was not being actively maintained. 
 
-This provider now supports tool streaming and calling for models. 
+This provider now supports: 
+- tool streaming and calling for models
+- enable/disable thinking
 
 ## Setup
 
