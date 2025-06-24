@@ -169,6 +169,7 @@ export class OllamaChatLanguageModel implements LanguageModelV1 {
       max_tokens: maxTokens,
       temperature,
       top_p: topP,
+      think: this.settings.think,
       frequency_penalty: frequencyPenalty,
       presence_penalty: presencePenalty,
       response_format:
@@ -384,8 +385,6 @@ export class OllamaChatLanguageModel implements LanguageModelV1 {
     // provider metadata:
     const providerMetadata: LanguageModelV1ProviderMetadata = { ollama: {} };
 
-    console.log("Response!", response)
-
 
     return {
       text: response.message.content ?? undefined,
@@ -502,8 +501,6 @@ export class OllamaChatLanguageModel implements LanguageModelV1 {
     };
     let isFirstChunk = true;
 
-    console.log("Reached here 1");
-
     return {
       stream: response.pipeThrough(
         new TransformStream<
@@ -522,13 +519,11 @@ export class OllamaChatLanguageModel implements LanguageModelV1 {
           },
           transform(chunk, controller) {
             // handle failed chunk parsing / validation:
-            console.log("Reached here 2");
             if (!chunk.success) {
               finishReason = 'error';
               controller.enqueue({ type: 'error', error: chunk.error });
               return;
             }
-            console.log("Reached here 3");
 
             const value = chunk.value;
 
@@ -536,7 +531,6 @@ export class OllamaChatLanguageModel implements LanguageModelV1 {
             if ('error' in value) {
               finishReason = 'error';
               controller.enqueue({ type: 'error', error: value.error });
-              console.log("Reached here 4");
               return;
             }
 
@@ -549,7 +543,6 @@ export class OllamaChatLanguageModel implements LanguageModelV1 {
               });
             }
 
-            console.log("Reached here 5");
 
             if(value.done){
               finishReason = mapOllamaFinishReason(value.done_reason);
@@ -559,7 +552,6 @@ export class OllamaChatLanguageModel implements LanguageModelV1 {
               };
             }
             const delta = value?.message;
-            console.log("delta",delta);
 
             if (delta?.content != null) {
               controller.enqueue({
@@ -569,11 +561,9 @@ export class OllamaChatLanguageModel implements LanguageModelV1 {
             }
 
             for (const toolCall of delta.tool_calls ?? []) {
-              console.log("Tool Call!", toolCall)
 
               // Tool call start. Ollama returns all information except the arguments in the first chunk.
               if (toolCall.function?.name == null) {
-                console.log("Reached here 6")
 
                 throw new InvalidResponseDataError({
                   data: toolCall,
@@ -586,7 +576,6 @@ export class OllamaChatLanguageModel implements LanguageModelV1 {
                 toolCall.function?.arguments != null && Object.keys(toolCall.function.arguments).length > 0
               ) {
 
-                console.log("Reached here 7")
                 const id = generateId();
 
                 controller.enqueue({

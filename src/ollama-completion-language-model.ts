@@ -119,6 +119,7 @@ export class OllamaCompletionLanguageModel implements LanguageModelV1 {
       max_tokens: maxTokens,
       temperature,
       top_p: topP,
+      think: this.settings.think,
       frequency_penalty: frequencyPenalty,
       presence_penalty: presencePenalty,
       seed,
@@ -209,7 +210,6 @@ export class OllamaCompletionLanguageModel implements LanguageModelV1 {
   ): Promise<Awaited<ReturnType<LanguageModelV1['doStream']>>> {
     const { args, warnings } = this.getArgs(options);
 
-    console.log("We're debugging!!!")
 
     const body = {
       ...args,

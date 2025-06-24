@@ -211,6 +211,15 @@ export type OllamaChatModelId =
 
 export interface OllamaChatSettings {
   /**
+   * Enable or disable the model's thinking process. When enabled, the output will separate 
+   * the model's thinking from the model's output. When disabled, the model will not think 
+   * and directly output the content.
+   * 
+   * Only supported by certain models like DeepSeek R1 and Qwen 3.
+   */
+  think?: boolean;
+
+  /**
 Modify the likelihood of specified tokens appearing in the completion.
 
 Accepts a JSON object that maps tokens (specified by their token ID in
