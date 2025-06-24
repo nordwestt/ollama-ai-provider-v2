@@ -56,13 +56,13 @@
   "publishConfig": {
     "access": "public"
   },
-  "homepage": "https://sdk.vercel.ai/docs",
+  "homepage": "https://github.com/nordwestt/ollama-ai-provider-v2",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/vercel/ai.git"
+    "url": "git+https://github.com/nordwestt/ollama-ai-provider-v2.git"
   },
   "bugs": {
-    "url": "https://github.com/vercel/ai/issues"
+    "url": "https://github.com/nordwestt/ollama-ai-provider-v2/issues"
   },
   "keywords": [
     "ai"

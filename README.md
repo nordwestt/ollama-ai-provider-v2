@@ -32,6 +32,19 @@ const { text } = await generateText({
 });
 ```
 
+## Thinking mode toggle example
+
+```ts
+import { ollama } from 'ollama-ai-provider';
+import { generateText } from 'ai';
+
+const { text } = await generateText({
+  model: ollama('qwen3:4b', { think: true }),
+  prompt: 'Write a meaty lasagna recipe for 4 people, but really think about it',
+});
+```
+
+
 ## Documentation
 
 Please check out the **[Ollama provider documentation](https://github.com/nordwestt/ollama-ai-provider-v2)** for more information.
