@@ -520,6 +520,24 @@ export class OllamaChatLanguageModel implements LanguageModelV1 {
           transform(chunk, controller) {
             // handle failed chunk parsing / validation:
             if (!chunk.success) {
+              
+              try{
+                const text = (chunk.error as any).text as string;
+                const lines = text.split('\n');
+                lines.forEach(line => {
+                  if(line.trim()==='') return;
+                  const parsed = JSON.parse(line);
+                  controller.enqueue({
+                    type: 'text-delta',
+                    textDelta: parsed.message.content,
+                  });
+                });
+                return;
+              }
+              catch(e){
+                console.error('ccchunk error', e);
+              }
+              console.error('chunk error', Object.keys((chunk.error as any).text));
               finishReason = 'error';
               controller.enqueue({ type: 'error', error: chunk.error });
               return;
