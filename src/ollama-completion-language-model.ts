@@ -72,6 +72,7 @@ export class OllamaCompletionLanguageModel implements LanguageModelV1 {
     stopSequences: userStopSequences,
     responseFormat,
     seed,
+    providerMetadata
   }: Parameters<LanguageModelV1['doGenerate']>[0]) {
     const type = mode.type;
 
@@ -119,7 +120,6 @@ export class OllamaCompletionLanguageModel implements LanguageModelV1 {
       max_tokens: maxTokens,
       temperature,
       top_p: topP,
-      think: this.settings.think,
       frequency_penalty: frequencyPenalty,
       presence_penalty: presencePenalty,
       seed,
@@ -129,6 +129,10 @@ export class OllamaCompletionLanguageModel implements LanguageModelV1 {
 
       // stop sequences:
       stop: stop.length > 0 ? stop : undefined,
+
+      // ollama specific settings:
+      think: providerMetadata?.ollama?.think ?? this.settings.think,
+
     };
 
     switch (type) {
