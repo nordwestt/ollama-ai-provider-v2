@@ -41,7 +41,8 @@ import { ollama } from 'ollama-ai-provider';
 import { generateText } from 'ai';
 
 const { text } = await generateText({
-  model: ollama('qwen3:4b', { think: true }),
+  model: ollama('qwen3:4b'),
+  providerOptions: { ollama: { think: true } },
   prompt: 'Write a meaty lasagna recipe for 4 people, but really think about it',
 });
 ```
