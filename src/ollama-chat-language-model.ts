@@ -389,6 +389,7 @@ export class OllamaChatLanguageModel implements LanguageModelV1 {
 
     return {
       text: response.message.content ?? undefined,
+      reasoning: response.message.thinking,
       toolCalls: response.message.tool_calls?.map(toolCall => ({
               toolCallType: 'function',
               toolCallId: toolCall.id ?? generateId(),
@@ -532,6 +533,10 @@ export class OllamaChatLanguageModel implements LanguageModelV1 {
                     type: 'text-delta',
                     textDelta: parsed.message.content,
                   });
+                  controller.enqueue({
+                    type: 'reasoning',
+                    textDelta: parsed.message.thinking
+                  });
                 });
                 return;
               }
@@ -576,6 +581,13 @@ export class OllamaChatLanguageModel implements LanguageModelV1 {
               controller.enqueue({
                 type: 'text-delta',
                 textDelta: delta.content,
+              });
+            }
+
+            if(delta?.thinking){
+              controller.enqueue({
+                type: 'reasoning',
+                textDelta: delta.thinking
               });
             }
 
@@ -651,6 +663,7 @@ const baseOllamaResponseSchema = z.object({
   message: z.object({
     content: z.string(),
     role: z.string(),
+    thinking: z.string().optional(),
     tool_calls: z.array(z.object({
       function: z.object({
         name: z.string(),
