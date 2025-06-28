@@ -260,7 +260,8 @@ describe('assistant messages', () => {
     expect(result).toEqual([
       {
         role: 'assistant',
-        content: 'Let me think about this.This is my reasoning process. The answer is 42.',
+        content: 'Let me think about this. The answer is 42.',
+        thinking: 'This is my reasoning process.',
       },
     ]);
   });

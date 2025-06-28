@@ -109,6 +109,7 @@ export function convertToOllamaChatMessages({
 
       case 'assistant': {
         let text = '';
+        let thinking = '';
         const toolCalls: Array<{
           id: string;
           type: 'function';
@@ -133,7 +134,7 @@ export function convertToOllamaChatMessages({
               break;
             }
             case 'reasoning': {
-              text += part.text;
+              thinking += part.text;
               break;
             } 
             default: {
@@ -154,6 +155,7 @@ export function convertToOllamaChatMessages({
           messages.push({
             role: 'assistant',
             content: text,
+            ...(thinking && { thinking }),
             function_call:
               toolCalls.length > 0 ? toolCalls[0].function : undefined,
           });
@@ -161,6 +163,7 @@ export function convertToOllamaChatMessages({
           messages.push({
             role: 'assistant',
             content: text,
+            ...(thinking && { thinking }),
             tool_calls: toolCalls.length > 0 ? toolCalls : undefined,
           });
         }
