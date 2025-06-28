@@ -132,6 +132,10 @@ export function convertToOllamaChatMessages({
               });
               break;
             }
+            case 'reasoning': {
+              text += part.text;
+              break;
+            } 
             default: {
               const _exhaustiveCheck: never = part;
               throw new Error(`Unsupported part: ${_exhaustiveCheck}`);
