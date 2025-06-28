@@ -169,7 +169,6 @@ export class OllamaChatLanguageModel implements LanguageModelV1 {
       max_tokens: maxTokens,
       temperature,
       top_p: topP,
-      think: this.settings.think,
       frequency_penalty: frequencyPenalty,
       presence_penalty: presencePenalty,
       response_format:
@@ -198,6 +197,8 @@ export class OllamaChatLanguageModel implements LanguageModelV1 {
       reasoning_effort:
         providerMetadata?.ollama?.reasoningEffort ??
         this.settings.reasoningEffort,
+      think: providerMetadata?.ollama?.think ?? this.settings.think,
+
 
       // messages:
       messages: convertToOllamaChatMessages({
