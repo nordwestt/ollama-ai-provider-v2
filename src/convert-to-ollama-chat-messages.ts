@@ -7,11 +7,9 @@ import { OllamaChatPrompt } from './ollama-chat-prompt';
 
 export function convertToOllamaChatMessages({
   prompt,
-  useLegacyFunctionCalling = false,
   systemMessageMode = 'system',
 }: {
   prompt: LanguageModelV1Prompt;
-  useLegacyFunctionCalling?: boolean;
   systemMessageMode?: 'system' | 'developer' | 'remove';
 }): OllamaChatPrompt {
   const messages: OllamaChatPrompt = [];
@@ -138,54 +136,28 @@ export function convertToOllamaChatMessages({
               break;
             } 
             default: {
-              const _exhaustiveCheck: never = part;
-              throw new Error(`Unsupported part: ${_exhaustiveCheck}`);
+              throw new Error(`Unsupported part: ${part}`);
             }
           }
         }
-
-        if (useLegacyFunctionCalling) {
-          if (toolCalls.length > 1) {
-            throw new UnsupportedFunctionalityError({
-              functionality:
-                'useLegacyFunctionCalling with multiple tool calls in one message',
-            });
-          }
-
-          messages.push({
-            role: 'assistant',
-            content: text,
-            ...(thinking && { thinking }),
-            function_call:
-              toolCalls.length > 0 ? toolCalls[0].function : undefined,
-          });
-        } else {
-          messages.push({
-            role: 'assistant',
-            content: text,
-            ...(thinking && { thinking }),
-            tool_calls: toolCalls.length > 0 ? toolCalls : undefined,
-          });
-        }
+        
+        messages.push({
+          role: 'assistant',
+          content: text,
+          ...(thinking && { thinking }),
+          tool_calls: toolCalls.length > 0 ? toolCalls : undefined,
+        });
 
         break;
       }
 
       case 'tool': {
         for (const toolResponse of content) {
-          if (useLegacyFunctionCalling) {
-            messages.push({
-              role: 'function',
-              name: toolResponse.toolName,
-              content: JSON.stringify(toolResponse.result),
-            });
-          } else {
-            messages.push({
-              role: 'tool',
-              tool_call_id: toolResponse.toolCallId,
-              content: JSON.stringify(toolResponse.result),
-            });
-          }
+          messages.push({
+            role: 'tool',
+            tool_call_id: toolResponse.toolCallId,
+            content: JSON.stringify(toolResponse.result),
+          });
         }
         break;
       }

@@ -7,13 +7,11 @@ import {
 
 export function prepareTools({
   mode,
-  useLegacyFunctionCalling = false,
   structuredOutputs,
 }: {
   mode: Parameters<LanguageModelV1['doGenerate']>[0]['mode'] & {
     type: 'regular';
   };
-  useLegacyFunctionCalling: boolean | undefined;
   structuredOutputs: boolean;
 }): {
   tools?: {
@@ -51,57 +49,6 @@ export function prepareTools({
   }
 
   const toolChoice = mode.toolChoice;
-
-  if (useLegacyFunctionCalling) {
-    const ollamaFunctions: Array<{
-      name: string;
-      description: string | undefined;
-      parameters: JSONSchema7;
-    }> = [];
-
-    for (const tool of tools) {
-      if (tool.type === 'provider-defined') {
-        toolWarnings.push({ type: 'unsupported-tool', tool });
-      } else {
-        ollamaFunctions.push({
-          name: tool.name,
-          description: tool.description,
-          parameters: tool.parameters,
-        });
-      }
-    }
-
-    if (toolChoice == null) {
-      return {
-        functions: ollamaFunctions,
-        function_call: undefined,
-        toolWarnings,
-      };
-    }
-
-    const type = toolChoice.type;
-
-    switch (type) {
-      case 'auto':
-      case 'none':
-      case undefined:
-        return {
-          functions: ollamaFunctions,
-          function_call: undefined,
-          toolWarnings,
-        };
-      case 'required':
-        throw new UnsupportedFunctionalityError({
-          functionality: 'useLegacyFunctionCalling and toolChoice: required',
-        });
-      default:
-        return {
-          functions: ollamaFunctions,
-          function_call: { name: toolChoice.toolName },
-          toolWarnings,
-        };
-    }
-  }
 
   const ollamaTools: Array<{
     type: 'function';

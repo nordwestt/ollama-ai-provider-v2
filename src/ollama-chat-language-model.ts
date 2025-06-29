@@ -119,20 +119,6 @@ export class OllamaChatLanguageModel implements LanguageModelV1 {
       });
     }
 
-    const useLegacyFunctionCalling = this.settings.useLegacyFunctionCalling;
-
-    if (useLegacyFunctionCalling && this.settings.parallelToolCalls === true) {
-      throw new UnsupportedFunctionalityError({
-        functionality: 'useLegacyFunctionCalling with parallelToolCalls',
-      });
-    }
-
-    if (useLegacyFunctionCalling && this.supportsStructuredOutputs) {
-      throw new UnsupportedFunctionalityError({
-        functionality: 'structuredOutputs with useLegacyFunctionCalling',
-      });
-    }
-
     if (
       getSystemMessageMode(this.modelId) === 'remove' &&
       prompt.some(message => message.role === 'system')
@@ -203,7 +189,6 @@ export class OllamaChatLanguageModel implements LanguageModelV1 {
       // messages:
       messages: convertToOllamaChatMessages({
         prompt,
-        useLegacyFunctionCalling,
         systemMessageMode: getSystemMessageMode(this.modelId),
       }),
     };
@@ -279,7 +264,6 @@ export class OllamaChatLanguageModel implements LanguageModelV1 {
         const { tools, tool_choice, functions, function_call, toolWarnings } =
           prepareTools({
             mode,
-            useLegacyFunctionCalling,
             structuredOutputs: this.supportsStructuredOutputs,
           });
 
@@ -318,21 +302,7 @@ export class OllamaChatLanguageModel implements LanguageModelV1 {
 
       case 'object-tool': {
         return {
-          args: useLegacyFunctionCalling
-            ? {
-                ...baseArgs,
-                function_call: {
-                  name: mode.tool.name,
-                },
-                functions: [
-                  {
-                    name: mode.tool.name,
-                    description: mode.tool.description,
-                    parameters: mode.tool.parameters,
-                  },
-                ],
-              }
-            : {
+          args: {
                 ...baseArgs,
                 tool_choice: {
                   type: 'function',

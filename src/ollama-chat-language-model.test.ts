@@ -608,79 +608,6 @@ describe('doGenerate', () => {
     ]);
   });
 
-  describe('when useLegacyFunctionCalling is enabled', () => {
-    let result: Awaited<ReturnType<LanguageModelV1['doGenerate']>>;
-
-    beforeEach(async () => {
-      prepareJsonResponse({
-        function_call: {
-          name: 'test-tool',
-          arguments: '{"value":"Spark"}',
-        },
-      });
-
-      const model = provider.chat('gpt-3.5-turbo', {
-        useLegacyFunctionCalling: true,
-      });
-
-      result = await model.doGenerate({
-        inputFormat: 'prompt',
-        mode: {
-          type: 'regular',
-          tools: [
-            {
-              type: 'function',
-              name: 'test-tool',
-              parameters: {
-                type: 'object',
-                properties: { value: { type: 'string' } },
-                required: ['value'],
-                additionalProperties: false,
-                $schema: 'http://json-schema.org/draft-07/schema#',
-              },
-            },
-          ],
-          toolChoice: {
-            type: 'tool',
-            toolName: 'test-tool',
-          },
-        },
-        prompt: TEST_PROMPT,
-      });
-    });
-
-    it('should pass functions and function_call with useLegacyFunctionCalling', async () => {
-      expect(await server.getRequestBodyJson()).toEqual({
-        messages: [{ role: 'user', content: 'Hello' }],
-        model: 'gpt-3.5-turbo',
-        functions: [
-          {
-            name: 'test-tool',
-            parameters: {
-              type: 'object',
-              properties: { value: { type: 'string' } },
-              required: ['value'],
-              additionalProperties: false,
-              $schema: 'http://json-schema.org/draft-07/schema#',
-            },
-          },
-        ],
-        function_call: { name: 'test-tool' },
-      });
-    });
-
-    it('should parse function results with useLegacyFunctionCalling', async () => {
-      expect(result.toolCalls).toStrictEqual([
-        {
-          args: '{"value":"Spark"}',
-          toolCallId: expect.any(String),
-          toolCallType: 'function',
-          toolName: 'test-tool',
-        },
-      ]);
-    });
-  });
-
   describe('response format', () => {
     it('should not send a response_format when response format is text', async () => {
       prepareJsonResponse({ content: '{"value":"Spark"}' });
@@ -1931,9 +1858,7 @@ describe('doStream', () => {
         `"choices":[],"usage":{"prompt_tokens":53,"completion_tokens":17,"total_tokens":70}}\n\n`,
     ];
 
-    const model = provider.chat('gpt-4-turbo', {
-      useLegacyFunctionCalling: true,
-    });
+    const model = provider.chat('gpt-4-turbo', {});
 
     const { stream } = await model.doStream({
       inputFormat: 'prompt',
