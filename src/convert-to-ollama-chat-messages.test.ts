@@ -242,6 +242,31 @@ describe('user messages', () => {
   });
 });
 
+describe('assistant messages', () => {
+  it('should handle reasoning parts in assistant content', () => {
+    const result = convertToOllamaChatMessages({
+      prompt: [
+        {
+          role: 'assistant',
+          content: [
+            { type: 'text', text: 'Let me think about this.' },
+            { type: 'reasoning', text: 'This is my reasoning process.' },
+            { type: 'text', text: ' The answer is 42.' },
+          ],
+        },
+      ],
+    });
+
+    expect(result).toEqual([
+      {
+        role: 'assistant',
+        content: 'Let me think about this. The answer is 42.',
+        thinking: 'This is my reasoning process.',
+      },
+    ]);
+  });
+});
+
 describe('tool calls', () => {
   it('should stringify arguments to tool calls', () => {
     const result = convertToOllamaChatMessages({
