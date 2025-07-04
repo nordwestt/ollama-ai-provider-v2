@@ -1,10 +1,11 @@
 import {
-  LanguageModelV1,
-  LanguageModelV1CallWarning,
-  LanguageModelV1FinishReason,
-  LanguageModelV1LogProbs,
-  LanguageModelV1StreamPart,
-  UnsupportedFunctionalityError,
+  LanguageModelV2,
+  LanguageModelV2CallWarning,
+  LanguageModelV2Content,
+  LanguageModelV2FinishReason,
+  LanguageModelV2StreamPart,
+  LanguageModelV2Usage,
+  SharedV2ProviderMetadata,
 } from '@ai-sdk/provider';
 import {
   FetchFunction,
@@ -12,6 +13,7 @@ import {
   combineHeaders,
   createEventSourceResponseHandler,
   createJsonResponseHandler,
+  parseProviderOptions,
   postJsonToApi,
 } from '@ai-sdk/provider-utils';
 import { z } from 'zod';
@@ -27,6 +29,7 @@ import {
   ollamaFailedResponseHandler,
 } from './ollama-error';
 import { getResponseMetadata } from './get-response-metadata';
+import { ollamaProviderOptions } from './ollama-chat-settings';
 
 type OllamaCompletionConfig = {
   provider: string;
@@ -36,12 +39,10 @@ type OllamaCompletionConfig = {
   fetch?: FetchFunction;
 };
 
-export class OllamaCompletionLanguageModel implements LanguageModelV1 {
-  readonly specificationVersion = 'v1';
-  readonly defaultObjectGenerationMode = undefined;
-
+export class OllamaCompletionLanguageModel implements LanguageModelV2 {
+  readonly specificationVersion = 'v2';
   readonly modelId: OllamaCompletionModelId;
-  readonly settings: OllamaCompletionSettings;
+  readonly settings?: OllamaCompletionSettings;
 
   private readonly config: OllamaCompletionConfig;
 
@@ -59,11 +60,13 @@ export class OllamaCompletionLanguageModel implements LanguageModelV1 {
     return this.config.provider;
   }
 
-  private getArgs({
-    mode,
-    inputFormat,
+  readonly supportedUrls: Record<string, RegExp[]> = {
+    // No URLs are supported for completion models.
+  };
+
+  private async getArgs({
     prompt,
-    maxTokens,
+    maxOutputTokens,
     temperature,
     topP,
     topK,
@@ -71,18 +74,35 @@ export class OllamaCompletionLanguageModel implements LanguageModelV1 {
     presencePenalty,
     stopSequences: userStopSequences,
     responseFormat,
+    tools,
+    toolChoice,
     seed,
-    providerMetadata
-  }: Parameters<LanguageModelV1['doGenerate']>[0]) {
-    const type = mode.type;
+    providerOptions
+  }: Parameters<LanguageModelV2['doGenerate']>[0]) {
 
-    const warnings: LanguageModelV1CallWarning[] = [];
+    const warnings: LanguageModelV2CallWarning[] = [];
+
+    // Parse provider options
+    const ollamaOptions =
+      (await parseProviderOptions({
+        provider: 'ollama',
+        providerOptions,
+        schema: ollamaProviderOptions,
+      })) ?? {};
 
     if (topK != null) {
       warnings.push({
         type: 'unsupported-setting',
         setting: 'topK',
       });
+    }
+
+    if (tools?.length) {
+      warnings.push({ type: 'unsupported-setting', setting: 'tools' });
+    }
+
+    if (toolChoice != null) {
+      warnings.push({ type: 'unsupported-setting', setting: 'toolChoice' });
     }
 
     if (responseFormat != null && responseFormat.type !== 'text') {
@@ -94,95 +114,57 @@ export class OllamaCompletionLanguageModel implements LanguageModelV1 {
     }
 
     const { prompt: completionPrompt, stopSequences } =
-      convertToOllamaCompletionPrompt({ prompt, inputFormat });
+      convertToOllamaCompletionPrompt({ prompt });
 
     const stop = [...(stopSequences ?? []), ...(userStopSequences ?? [])];
 
-    const baseArgs = {
-      // model id:
-      model: this.modelId,
+    return {
+      args: {
+        // model id:
+        model: this.modelId,
 
-      // model specific settings:
-      echo: this.settings.echo,
-      logit_bias: this.settings.logitBias,
-      logprobs:
-        typeof this.settings.logprobs === 'number'
-          ? this.settings.logprobs
-          : typeof this.settings.logprobs === 'boolean'
-          ? this.settings.logprobs
+        // model specific settings:
+        logit_bias: ollamaOptions.logitBias,
+        logprobs:
+        ollamaOptions?.logprobs === true
             ? 0
-            : undefined
-          : undefined,
-      suffix: this.settings.suffix,
-      user: this.settings.user,
+            : ollamaOptions?.logprobs === false
+              ? undefined
+              : ollamaOptions?.logprobs,
+        user: ollamaOptions.user,
 
-      // standardized settings:
-      max_tokens: maxTokens,
-      temperature,
-      top_p: topP,
-      frequency_penalty: frequencyPenalty,
-      presence_penalty: presencePenalty,
-      seed,
+        // standardized settings:
+        max_tokens: maxOutputTokens,
+        temperature,
+        top_p: topP,
+        frequency_penalty: frequencyPenalty,
+        presence_penalty: presencePenalty,
+        seed,
+        think: providerOptions?.ollama?.think ?? this.settings?.think,
 
-      // prompt:
-      prompt: completionPrompt,
+        // prompt:
+        prompt: completionPrompt,
 
-      // stop sequences:
-      stop: stop.length > 0 ? stop : undefined,
-
-      // ollama specific settings:
-      think: providerMetadata?.ollama?.think ?? this.settings.think,
-
+        // stop sequences:
+        stop: stop.length > 0 ? stop : undefined,
+      },
+      warnings,
     };
 
-    switch (type) {
-      case 'regular': {
-        if (mode.tools?.length) {
-          throw new UnsupportedFunctionalityError({
-            functionality: 'tools',
-          });
-        }
-
-        if (mode.toolChoice) {
-          throw new UnsupportedFunctionalityError({
-            functionality: 'toolChoice',
-          });
-        }
-
-        return { args: baseArgs, warnings };
-      }
-
-      case 'object-json': {
-        throw new UnsupportedFunctionalityError({
-          functionality: 'object-json mode',
-        });
-      }
-
-      case 'object-tool': {
-        throw new UnsupportedFunctionalityError({
-          functionality: 'object-tool mode',
-        });
-      }
-
-      default: {
-        const _exhaustiveCheck: never = type;
-        throw new Error(`Unsupported type: ${_exhaustiveCheck}`);
-      }
-    }
   }
 
   async doGenerate(
-    options: Parameters<LanguageModelV1['doGenerate']>[0],
-  ): Promise<Awaited<ReturnType<LanguageModelV1['doGenerate']>>> {
-    const { args, warnings } = this.getArgs(options);
+    options: Parameters<LanguageModelV2['doGenerate']>[0],
+  ): Promise<Awaited<ReturnType<LanguageModelV2['doGenerate']>>> {
+    const { args:body, warnings } = await this.getArgs(options);
 
-    const { responseHeaders, value: response } = await postJsonToApi({
+    const { responseHeaders, value: response, rawValue: rawResponse } = await postJsonToApi({
       url: this.config.url({
         path: '/generate',
         modelId: this.modelId,
       }),
       headers: combineHeaders(this.config.headers(), options.headers),
-      body: {args, stream: false},
+      body: {...body, stream: false},
       failedResponseHandler: ollamaFailedResponseHandler,
       successfulResponseHandler: createJsonResponseHandler(
         baseOllamaResponseSchema,
@@ -191,28 +173,32 @@ export class OllamaCompletionLanguageModel implements LanguageModelV1 {
       fetch: this.config.fetch,
     });
 
-    const { prompt: rawPrompt, ...rawSettings } = args;
+    const { prompt: rawPrompt, ...rawSettings } = body;
+
+    const providerMetadata: SharedV2ProviderMetadata = { ollama: {} };
 
     return {
-      text: response.response,
+      content: [{
+        type: 'text',
+        text: response.response,
+      }],
       usage: {
-        promptTokens: response.prompt_eval_count??0,
-        completionTokens: response.eval_count??0,
+        inputTokens: response.prompt_eval_count ?? undefined,
+        outputTokens: response.eval_count ?? undefined,
+        totalTokens: response.eval_count ?? undefined
       },
       finishReason: mapOllamaFinishReason('stop'),
-      logprobs: mapOllamaCompletionLogProbs(null),
-      rawCall: { rawPrompt, rawSettings },
-      rawResponse: { headers: responseHeaders },
-      response: getResponseMetadata(response),
+      request: { body: JSON.stringify(body) },
+      response: {...getResponseMetadata(response), headers: responseHeaders, body: rawResponse},
       warnings,
-      request: { body: JSON.stringify(args) },
+      providerMetadata,
     };
   }
 
   async doStream(
-    options: Parameters<LanguageModelV1['doStream']>[0],
-  ): Promise<Awaited<ReturnType<LanguageModelV1['doStream']>>> {
-    const { args, warnings } = this.getArgs(options);
+    options: Parameters<LanguageModelV2['doStream']>[0],
+  ): Promise<Awaited<ReturnType<LanguageModelV2['doStream']>>> {
+    const { args, warnings } = await this.getArgs(options);
 
 
     const body = {
@@ -243,19 +229,19 @@ export class OllamaCompletionLanguageModel implements LanguageModelV1 {
 
     const { prompt: rawPrompt, ...rawSettings } = args;
 
-    let finishReason: LanguageModelV1FinishReason = 'unknown';
-    let usage: { promptTokens: number; completionTokens: number } = {
-      promptTokens: Number.NaN,
-      completionTokens: Number.NaN,
+    let finishReason: LanguageModelV2FinishReason = 'unknown';
+    let usage: LanguageModelV2Usage = {
+      inputTokens: undefined,
+      outputTokens: undefined,
+      totalTokens: undefined,
     };
-    let logprobs: LanguageModelV1LogProbs;
     let isFirstChunk = true;
 
     return {
       stream: response.pipeThrough(
         new TransformStream<
           ParseResult<z.infer<typeof baseOllamaResponseSchema>>,
-          LanguageModelV1StreamPart
+          LanguageModelV2StreamPart
         >({
           transform(chunk, controller) {
             // handle failed chunk parsing / validation:
@@ -290,7 +276,8 @@ export class OllamaCompletionLanguageModel implements LanguageModelV1 {
             if (value.response != null) {
               controller.enqueue({
                 type: 'text-delta',
-                textDelta: value.response,
+                id: '0',
+                delta: value.response,
               });
             }
 
@@ -298,18 +285,15 @@ export class OllamaCompletionLanguageModel implements LanguageModelV1 {
 
           flush(controller) {
             controller.enqueue({
-              type: 'finish',
+              type: "finish",
               finishReason,
-              logprobs,
               usage,
             });
           },
         }),
       ),
-      rawCall: { rawPrompt, rawSettings },
-      rawResponse: { headers: responseHeaders },
-      warnings,
       request: { body: JSON.stringify(body) },
+      response: { headers: responseHeaders },
     };
   }
 }

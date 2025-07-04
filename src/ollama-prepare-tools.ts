@@ -1,83 +1,57 @@
 import {
   JSONSchema7,
-  LanguageModelV1,
-  LanguageModelV1CallWarning,
+  LanguageModelV2,
+  LanguageModelV2CallOptions,
+  LanguageModelV2CallWarning,
   UnsupportedFunctionalityError,
 } from '@ai-sdk/provider';
+import { OllamaToolChoice, OllamaTools } from './ollama-types';
 
 export function prepareTools({
-  mode,
+  tools,
+  toolChoice,
   structuredOutputs,
+  strictJsonSchema,
 }: {
-  mode: Parameters<LanguageModelV1['doGenerate']>[0]['mode'] & {
-    type: 'regular';
-  };
+  tools: LanguageModelV2CallOptions['tools'];
+  toolChoice?: LanguageModelV2CallOptions['toolChoice'];
   structuredOutputs: boolean;
+  strictJsonSchema: boolean;
 }): {
-  tools?: {
-    type: 'function';
-    function: {
-      name: string;
-      description: string | undefined;
-      parameters: JSONSchema7;
-      strict?: boolean;
-    };
-  }[];
-  tool_choice?:
-    | 'auto'
-    | 'none'
-    | 'required'
-    | { type: 'function'; function: { name: string } };
-
-  // legacy support
-  functions?: {
-    name: string;
-    description: string | undefined;
-    parameters: JSONSchema7;
-  }[];
-  function_call?: { name: string };
-
-  toolWarnings: LanguageModelV1CallWarning[];
+  tools?: OllamaTools;
+  toolChoice?: OllamaToolChoice;
+  toolWarnings: Array<LanguageModelV2CallWarning>;
 } {
   // when the tools array is empty, change it to undefined to prevent errors:
-  const tools = mode.tools?.length ? mode.tools : undefined;
+  tools = tools?.length ? tools : undefined;
 
-  const toolWarnings: LanguageModelV1CallWarning[] = [];
+  const toolWarnings: LanguageModelV2CallWarning[] = [];
 
   if (tools == null) {
-    return { tools: undefined, tool_choice: undefined, toolWarnings };
+    return { tools: undefined, toolChoice: undefined, toolWarnings };
   }
 
-  const toolChoice = mode.toolChoice;
-
-  const ollamaTools: Array<{
-    type: 'function';
-    function: {
-      name: string;
-      description: string | undefined;
-      parameters: JSONSchema7;
-      strict: boolean | undefined;
-    };
-  }> = [];
+  const ollamaTools: OllamaTools = [];
 
   for (const tool of tools) {
-    if (tool.type === 'provider-defined') {
-      toolWarnings.push({ type: 'unsupported-tool', tool });
-    } else {
+    if(tool.type === 'function'){
       ollamaTools.push({
         type: 'function',
         function: {
           name: tool.name,
           description: tool.description,
-          parameters: tool.parameters,
-          strict: structuredOutputs ? true : undefined,
+          parameters: tool.inputSchema,
+          strict: structuredOutputs ? strictJsonSchema : undefined,
         },
       });
+    }
+    else {
+      toolWarnings.push({ type: 'unsupported-tool', tool });
     }
   }
 
   if (toolChoice == null) {
-    return { tools: ollamaTools, tool_choice: undefined, toolWarnings };
+    return { tools: ollamaTools, toolChoice: undefined, toolWarnings };
   }
 
   const type = toolChoice.type;
@@ -86,11 +60,11 @@ export function prepareTools({
     case 'auto':
     case 'none':
     case 'required':
-      return { tools: ollamaTools, tool_choice: type, toolWarnings };
+      return { tools: ollamaTools, toolChoice: type, toolWarnings };
     case 'tool':
       return {
         tools: ollamaTools,
-        tool_choice: {
+        toolChoice: {
           type: 'function',
           function: {
             name: toolChoice.toolName,

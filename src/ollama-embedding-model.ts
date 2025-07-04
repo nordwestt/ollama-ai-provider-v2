@@ -1,5 +1,5 @@
 import {
-  EmbeddingModelV1,
+  EmbeddingModelV2,
   TooManyEmbeddingValuesForCallError,
 } from '@ai-sdk/provider';
 import {
@@ -15,8 +15,8 @@ import {
 } from './ollama-embedding-settings';
 import { ollamaFailedResponseHandler } from './ollama-error';
 
-export class OllamaEmbeddingModel implements EmbeddingModelV1<string> {
-  readonly specificationVersion = 'v1';
+export class OllamaEmbeddingModel implements EmbeddingModelV2<string> {
+  readonly specificationVersion = 'v2';
   readonly modelId: OllamaEmbeddingModelId;
 
   private readonly config: OllamaConfig;
@@ -48,8 +48,9 @@ export class OllamaEmbeddingModel implements EmbeddingModelV1<string> {
     values,
     headers,
     abortSignal,
-  }: Parameters<EmbeddingModelV1<string>['doEmbed']>[0]): Promise<
-    Awaited<ReturnType<EmbeddingModelV1<string>['doEmbed']>>
+    providerOptions,
+  }: Parameters<EmbeddingModelV2<string>['doEmbed']>[0]): Promise<
+    Awaited<ReturnType<EmbeddingModelV2<string>['doEmbed']>>
   > {
     if (values.length > this.maxEmbeddingsPerCall) {
       throw new TooManyEmbeddingValuesForCallError({
@@ -60,7 +61,7 @@ export class OllamaEmbeddingModel implements EmbeddingModelV1<string> {
       });
     }
 
-    const { responseHeaders, value: response } = await postJsonToApi({
+    const { responseHeaders, value: response, rawValue } = await postJsonToApi({
       url: this.config.url({
         path: '/embeddings',
         modelId: this.modelId,
@@ -86,7 +87,7 @@ export class OllamaEmbeddingModel implements EmbeddingModelV1<string> {
       usage: response.usage
         ? { tokens: response.usage.prompt_tokens }
         : undefined,
-      rawResponse: { headers: responseHeaders },
+      response: { headers: responseHeaders, body: rawValue },
     };
   }
 }
