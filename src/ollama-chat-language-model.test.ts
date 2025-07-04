@@ -1,3 +1,5 @@
+/// <reference types="vitest" />
+
 import { LanguageModelV2Prompt } from '@ai-sdk/provider';
 import {
   convertReadableStreamToArray,
@@ -106,13 +108,12 @@ const TEST_LOGPROBS = {
 };
 
 const provider = createOllama({
-  apiKey: 'test-api-key',
 });
 
-const model = provider.chat('gpt-3.5-turbo');
+const model = provider.chat('llama3.2:1b');
 
 const server = createTestServer({
-  'https://api.ollama.com/v1/chat/completions': {},
+  'http://localhost:11434/api/chat': {},
 });
 
 describe('doGenerate', () => {
@@ -173,7 +174,7 @@ describe('doGenerate', () => {
     model?: string;
     headers?: Record<string, string>;
   } = {}) {
-    server.urls['https://api.ollama.com/v1/chat/completions'].response = {
+    server.urls['http://localhost:11434/api/chat'].response = {
       type: 'json-value',
       headers,
       body: {
@@ -558,7 +559,6 @@ describe('doGenerate', () => {
     prepareJsonResponse({ content: '' });
 
     const provider = createOllama({
-      apiKey: 'test-api-key',
       organization: 'test-organization',
       project: 'test-project',
       headers: {
@@ -1530,7 +1530,7 @@ describe('doStream', () => {
     model?: string;
     headers?: Record<string, string>;
   }) {
-    server.urls['https://api.ollama.com/v1/chat/completions'].response = {
+    server.urls['http://localhost:11434/api/chat'].response = {
       type: 'stream-chunks',
       headers,
       chunks: [
@@ -1724,33 +1724,12 @@ describe('doStream', () => {
   });
 
   it('should stream tool deltas', async () => {
-    server.urls['https://api.ollama.com/v1/chat/completions'].response = {
+    server.urls['http://localhost:11434/api/chat'].response = {
       type: 'stream-chunks',
       chunks: [
         `data: {"id":"chatcmpl-96aZqmeDpA9IPD6tACY8djkMsJCMP","object":"chat.completion.chunk","created":1711357598,"model":"gpt-3.5-turbo-0125",` +
           `"system_fingerprint":"fp_3bc1b5746c","choices":[{"index":0,"delta":{"role":"assistant","content":null,` +
-          `"tool_calls":[{"index":0,"id":"call_O17Uplv4lJvD6DVdIvFFeRMw","type":"function","function":{"name":"test-tool","arguments":""}}]},` +
-          `"logprobs":null,"finish_reason":null}]}\n\n`,
-        `data: {"id":"chatcmpl-96aZqmeDpA9IPD6tACY8djkMsJCMP","object":"chat.completion.chunk","created":1711357598,"model":"gpt-3.5-turbo-0125",` +
-          `"system_fingerprint":"fp_3bc1b5746c","choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"function":{"arguments":"{\\""}}]},` +
-          `"logprobs":null,"finish_reason":null}]}\n\n`,
-        `data: {"id":"chatcmpl-96aZqmeDpA9IPD6tACY8djkMsJCMP","object":"chat.completion.chunk","created":1711357598,"model":"gpt-3.5-turbo-0125",` +
-          `"system_fingerprint":"fp_3bc1b5746c","choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"function":{"arguments":"value"}}]},` +
-          `"logprobs":null,"finish_reason":null}]}\n\n`,
-        `data: {"id":"chatcmpl-96aZqmeDpA9IPD6tACY8djkMsJCMP","object":"chat.completion.chunk","created":1711357598,"model":"gpt-3.5-turbo-0125",` +
-          `"system_fingerprint":"fp_3bc1b5746c","choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"function":{"arguments":"\\":\\""}}]},` +
-          `"logprobs":null,"finish_reason":null}]}\n\n`,
-        `data: {"id":"chatcmpl-96aZqmeDpA9IPD6tACY8djkMsJCMP","object":"chat.completion.chunk","created":1711357598,"model":"gpt-3.5-turbo-0125",` +
-          `"system_fingerprint":"fp_3bc1b5746c","choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"function":{"arguments":"Spark"}}]},` +
-          `"logprobs":null,"finish_reason":null}]}\n\n`,
-        `data: {"id":"chatcmpl-96aZqmeDpA9IPD6tACY8djkMsJCMP","object":"chat.completion.chunk","created":1711357598,"model":"gpt-3.5-turbo-0125",` +
-          `"system_fingerprint":"fp_3bc1b5746c","choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"function":{"arguments":"le"}}]},` +
-          `"logprobs":null,"finish_reason":null}]}\n\n`,
-        `data: {"id":"chatcmpl-96aZqmeDpA9IPD6tACY8djkMsJCMP","object":"chat.completion.chunk","created":1711357598,"model":"gpt-3.5-turbo-0125",` +
-          `"system_fingerprint":"fp_3bc1b5746c","choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"function":{"arguments":" Day"}}]},` +
-          `"logprobs":null,"finish_reason":null}]}\n\n`,
-        `data: {"id":"chatcmpl-96aZqmeDpA9IPD6tACY8djkMsJCMP","object":"chat.completion.chunk","created":1711357598,"model":"gpt-3.5-turbo-0125",` +
-          `"system_fingerprint":"fp_3bc1b5746c","choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"function":{"arguments":"\\"}"}}]},` +
+          `"tool_calls":[{"index":0,"id":"call_O17Uplv4lJvD6DVdIvFFeRMw","type":"function","function":{"name":"test-tool","arguments":"{\\"value\\":\\"Sparkle Day\\"}"}}]},` +
           `"logprobs":null,"finish_reason":null}]}\n\n`,
         `data: {"id":"chatcmpl-96aZqmeDpA9IPD6tACY8djkMsJCMP","object":"chat.completion.chunk","created":1711357598,"model":"gpt-3.5-turbo-0125",` +
           `"system_fingerprint":"fp_3bc1b5746c","choices":[{"index":0,"delta":{},"logprobs":null,"finish_reason":"tool_calls"}]}\n\n`,
@@ -1859,7 +1838,7 @@ describe('doStream', () => {
   });
 
   it('should stream tool call deltas when tool call arguments are passed in the first chunk', async () => {
-    server.urls['https://api.ollama.com/v1/chat/completions'].response = {
+    server.urls['http://localhost:11434/api/chat'].response = {
       type: 'stream-chunks',
       chunks: [
         `data: {"id":"chatcmpl-96aZqmeDpA9IPD6tACY8djkMsJCMP","object":"chat.completion.chunk","created":1711357598,"model":"gpt-3.5-turbo-0125",` +
@@ -1999,7 +1978,7 @@ describe('doStream', () => {
   });
 
   it('should not duplicate tool calls when there is an additional empty chunk after the tool call has been completed', async () => {
-    server.urls['https://api.ollama.com/v1/chat/completions'].response = {
+    server.urls['http://localhost:11434/api/chat'].response = {
       type: 'stream-chunks',
       chunks: [
         `data: {"id":"chat-2267f7e2910a4254bac0650ba74cfc1c","object":"chat.completion.chunk","created":1733162241,` +
@@ -2143,7 +2122,7 @@ describe('doStream', () => {
   });
 
   it('should stream tool call that is sent in one chunk', async () => {
-    server.urls['https://api.ollama.com/v1/chat/completions'].response = {
+    server.urls['http://localhost:11434/api/chat'].response = {
       type: 'stream-chunks',
       chunks: [
         `data: {"id":"chatcmpl-96aZqmeDpA9IPD6tACY8djkMsJCMP","object":"chat.completion.chunk","created":1711357598,"model":"gpt-3.5-turbo-0125",` +
@@ -2227,7 +2206,7 @@ describe('doStream', () => {
   });
 
   it('should handle error stream parts', async () => {
-    server.urls['https://api.ollama.com/v1/chat/completions'].response = {
+    server.urls['http://localhost:11434/api/chat'].response = {
       type: 'stream-chunks',
       chunks: [
         `data: {"error":{"message": "The server had an error processing your request. Sorry about that! You can retry your request, or contact us through our ` +
@@ -2275,7 +2254,7 @@ describe('doStream', () => {
   it.skipIf(isNodeVersion(20))(
     'should handle unparsable stream parts',
     async () => {
-      server.urls['https://api.ollama.com/v1/chat/completions'].response = {
+      server.urls['http://localhost:11434/api/chat'].response = {
         type: 'stream-chunks',
         chunks: [`data: {unparsable}\n\n`, 'data: [DONE]\n\n'],
       };
@@ -2402,7 +2381,6 @@ describe('doStream', () => {
     prepareStreamResponse({ content: [] });
 
     const provider = createOllama({
-      apiKey: 'test-api-key',
       organization: 'test-organization',
       project: 'test-project',
       headers: {

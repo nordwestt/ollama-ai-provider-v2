@@ -54,9 +54,9 @@ describe('user messages', () => {
           content: [
             { type: 'text', text: 'Hello' },
             {
-              type: 'image',
-              image: new Uint8Array([0, 1, 2, 3]),
-              mimeType: 'image/png',
+              type: 'file',
+              data: new Uint8Array([0, 1, 2, 3]),
+              mediaType: 'image/png',
             },
           ],
         },
@@ -84,14 +84,10 @@ describe('user messages', () => {
           role: 'user',
           content: [
             {
-              type: 'image',
-              image: new Uint8Array([0, 1, 2, 3]),
-              mimeType: 'image/png',
-              providerMetadata: {
-                ollama: {
-                  imageDetail: 'low',
-                },
-              },
+              type: 'file',
+              data: new Uint8Array([0, 1, 2, 3]),
+              mediaType: 'image/png',
+              filename: 'foo.png',
             },
           ],
         },

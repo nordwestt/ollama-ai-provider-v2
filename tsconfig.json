@@ -1,5 +1,8 @@
 {
   "extends": "./node_modules/@vercel/ai-tsconfig/ts-library.json",
   "include": ["."],
-  "exclude": ["*/dist", "dist", "build", "node_modules"]
+  "exclude": ["*/dist", "dist", "build", "node_modules"],
+  "compilerOptions": {
+    "types": ["vitest/globals"]
+  }
 }

@@ -13,7 +13,7 @@ importers:
         version: 2.0.0-beta.1
       '@ai-sdk/provider-utils':
         specifier: 3.0.0-beta.1
-        version: 3.0.0-beta.1(zod@3.23.8)
+        version: 3.0.0-beta.1(zod@3.25.49)
     devDependencies:
       '@types/node':
         specifier: ^18
@@ -31,8 +31,8 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@18.19.113)
       zod:
-        specifier: 3.23.8
-        version: 3.23.8
+        specifier: 3.25.49
+        version: 3.25.49
 
 packages:
 
@@ -873,18 +873,18 @@ packages:
     peerDependencies:
       zod: ^3.24.1
 
-  zod@3.23.8:
-    resolution: {integrity: sha512-XBx9AXhXktjUqnepgTiE5flcKIYWi/rme0Eaj+5Y0lftuGBq+jyRu/md4WnuxqgP1ubdpNCsYEYPxrzVHD8d6g==}
+  zod@3.25.49:
+    resolution: {integrity: sha512-JMMPMy9ZBk3XFEdbM3iL1brx4NUSejd6xr3ELrrGEfGb355gjhiAWtG3K5o+AViV/3ZfkIrCzXsZn6SbLwTR8Q==}
 
 snapshots:
 
-  '@ai-sdk/provider-utils@3.0.0-beta.1(zod@3.23.8)':
+  '@ai-sdk/provider-utils@3.0.0-beta.1(zod@3.25.49)':
     dependencies:
       '@ai-sdk/provider': 2.0.0-beta.1
       '@standard-schema/spec': 1.0.0
       eventsource-parser: 3.0.3
-      zod: 3.23.8
-      zod-to-json-schema: 3.24.6(zod@3.23.8)
+      zod: 3.25.49
+      zod-to-json-schema: 3.24.6(zod@3.25.49)
 
   '@ai-sdk/provider@2.0.0-beta.1':
     dependencies:
@@ -1596,8 +1596,8 @@ snapshots:
       string-width: 5.1.2
       strip-ansi: 7.1.0
 
-  zod-to-json-schema@3.24.6(zod@3.23.8):
+  zod-to-json-schema@3.24.6(zod@3.25.49):
     dependencies:
-      zod: 3.23.8
+      zod: 3.25.49
 
-  zod@3.23.8: {}
+  zod@3.25.49: {}
