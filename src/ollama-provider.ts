@@ -201,17 +201,26 @@ export function createOllama(
     });
 
   const createLanguageModel = (
-    modelId: OllamaChatModelId | OllamaCompletionModelId) => {
+    modelId: OllamaResponsesModelId) => {
     if (new.target) {
       throw new Error(
         'The Ollama model function cannot be called with the new keyword.',
       );
     }
 
-    return createChatModel(modelId);
+    return createResponsesModel(modelId);
   };
 
-  const provider = function (modelId: OllamaChatModelId | OllamaCompletionModelId) {
+  const createResponsesModel = (modelId: OllamaResponsesModelId) => {
+    return new OllamaResponsesLanguageModel(modelId, {
+      provider: `${providerName}.responses`,
+      url: ({ path }) => `${baseURL}${path}`,
+      headers: getHeaders,
+      fetch: options.fetch,
+    });
+  };
+
+  const provider = function (modelId: OllamaResponsesModelId) {
     return createLanguageModel(modelId);
   };
 
