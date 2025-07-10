@@ -136,6 +136,7 @@ export class OllamaResponsesLanguageModel implements LanguageModelV2 {
       previous_response_id: ollamaOptions?.previousResponseId,
       store: ollamaOptions?.store,
       user: ollamaOptions?.user,
+      think: ollamaOptions?.think ?? false,
       instructions: ollamaOptions?.instructions,
       service_tier: ollamaOptions?.serviceTier,
 
@@ -863,6 +864,7 @@ const ollamaResponsesProviderOptionsSchema = z.object({
   instructions: z.string().nullish(),
   reasoningSummary: z.string().nullish(),
   serviceTier: z.enum(["auto", "flex"]).nullish(),
+  think: z.boolean().nullish(),
 });
 
 export type OllamaResponsesProviderOptions = z.infer<

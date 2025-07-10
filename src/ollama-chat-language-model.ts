@@ -163,7 +163,7 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
           : undefined,
       stop: stopSequences,
       seed,
-      think: ollamaOptions.think ?? ollamaOptions.think,
+      think: ollamaOptions.think ?? false,
 
       // messages:
       messages: convertToOllamaChatMessages({
