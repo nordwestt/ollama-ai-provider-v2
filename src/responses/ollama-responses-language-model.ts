@@ -1,4 +1,5 @@
 import {
+  InvalidResponseDataError,
   LanguageModelV2,
   LanguageModelV2CallWarning,
   LanguageModelV2Content,
@@ -10,6 +11,7 @@ import {
   combineHeaders,
   createEventSourceResponseHandler,
   createJsonResponseHandler,
+  createJsonStreamResponseHandler,
   generateId,
   parseProviderOptions,
   ParseResult,
@@ -23,6 +25,8 @@ import { mapOllamaResponseFinishReason } from "./map-ollama-responses-finish-rea
 import { prepareResponsesTools } from "./ollama-responses-prepare-tools";
 import { OllamaResponsesModelId } from "../ollama-responses-settings";
 import { convertToOllamaChatMessages } from "../convert-to-ollama-chat-messages";
+import { getResponseMetadata } from "../get-response-metadata";
+import { mapOllamaFinishReason } from "../map-ollama-finish-reason";
 
 export class OllamaResponsesLanguageModel implements LanguageModelV2 {
   readonly specificationVersion = "v2";
@@ -59,7 +63,6 @@ export class OllamaResponsesLanguageModel implements LanguageModelV2 {
     toolChoice,
     responseFormat,
   }: Parameters<LanguageModelV2["doGenerate"]>[0]) {
-    console.log("getArgs1", this.modelId);
     const warnings: LanguageModelV2CallWarning[] = [];
     const modelConfig = getResponsesModelConfig(this.modelId);
 
@@ -88,7 +91,6 @@ export class OllamaResponsesLanguageModel implements LanguageModelV2 {
     if (stopSequences != null) {
       warnings.push({ type: "unsupported-setting", setting: "stopSequences" });
     }
-    console.log("getArgs2", this.modelId);
 
     const { messages, warnings: messageWarnings } =
       convertToOllamaResponsesMessages({
@@ -97,15 +99,12 @@ export class OllamaResponsesLanguageModel implements LanguageModelV2 {
       });
 
     warnings.push(...messageWarnings);
-    console.log("getArgs3", this.modelId);
     const ollamaOptions = await parseProviderOptions({
       provider: "ollama",
       providerOptions,
       schema: ollamaResponsesProviderOptionsSchema,
     });
-    console.log("getArgs4", this.modelId);
     const strictJsonSchema = ollamaOptions?.strictJsonSchema ?? false;
-    console.log("getArgs5", this.modelId);
     const baseArgs = {
       model: this.modelId,
       messages: convertToOllamaChatMessages({
@@ -157,7 +156,6 @@ export class OllamaResponsesLanguageModel implements LanguageModelV2 {
         truncation: "auto",
       }),
     };
-    console.log("getArgs6", this.modelId);
     if (modelConfig.isReasoningModel) {
       // remove unsupported settings for reasoning models
       // see https://platform.ollama.com/docs/guides/reasoning#limitations
@@ -179,7 +177,6 @@ export class OllamaResponsesLanguageModel implements LanguageModelV2 {
         });
       }
     }
-    console.log("getArgs7", this.modelId);
     // Validate flex processing support
     if (
       ollamaOptions?.serviceTier === "flex" &&
@@ -193,7 +190,6 @@ export class OllamaResponsesLanguageModel implements LanguageModelV2 {
       // Remove from args if not supported
       delete (baseArgs as any).service_tier;
     }
-    console.log("getArgs8", this.modelId);
     const {
       tools: ollamaTools,
       toolChoice: ollamaToolChoice,
@@ -203,7 +199,6 @@ export class OllamaResponsesLanguageModel implements LanguageModelV2 {
       toolChoice,
       strictJsonSchema,
     });
-    console.log("getArgs9", this.modelId);
     return {
       args: {
         ...baseArgs,
@@ -428,8 +423,8 @@ export class OllamaResponsesLanguageModel implements LanguageModelV2 {
         stream: true,
       },
       failedResponseHandler: ollamaFailedResponseHandler,
-      successfulResponseHandler: createEventSourceResponseHandler(
-        ollamaResponsesChunkSchema,
+      successfulResponseHandler: createJsonStreamResponseHandler(
+        baseOllamaResponseSchema,
       ),
       abortSignal: options.abortSignal,
       fetch: this.config.fetch,
@@ -438,7 +433,7 @@ export class OllamaResponsesLanguageModel implements LanguageModelV2 {
     const self = this;
 
     let finishReason: LanguageModelV2FinishReason = "unknown";
-    const usage: LanguageModelV2Usage = {
+    let usage: LanguageModelV2Usage = {
       inputTokens: undefined,
       outputTokens: undefined,
       totalTokens: undefined,
@@ -449,26 +444,45 @@ export class OllamaResponsesLanguageModel implements LanguageModelV2 {
       { toolName: string; toolCallId: string } | undefined
     > = {};
     let hasToolCalls = false;
+    let isFirstChunk = true;
 
     return {
       stream: response.pipeThrough(
         new TransformStream<
-          ParseResult<z.infer<typeof ollamaResponsesChunkSchema>>,
+          ParseResult<z.infer<typeof baseOllamaResponseSchema>>,
           LanguageModelV2StreamPart
         >({
           start(controller) {
-            console.log("Stream started");
             controller.enqueue({ type: "stream-start", warnings });
           },
 
           transform(chunk, controller) {
-            console.log("Chunk received", chunk);
-            if (options.includeRawChunks) {
-              controller.enqueue({ type: "raw", rawValue: chunk.rawValue });
-            }
-
-            // handle failed chunk parsing / validation:
             if (!chunk.success) {
+              try {
+                const text = (chunk.error as any).text as string;
+                const lines = text.split("\n");
+                lines.forEach((line) => {
+                  if (line.trim() === "") return;
+                  const parsed = JSON.parse(line);
+                  controller.enqueue({
+                    type: "text-delta",
+                    id: "0",
+                    delta: parsed.message.content,
+                  });
+                  controller.enqueue({
+                    type: "reasoning-delta",
+                    id: "0",
+                    delta: parsed.message.thinking,
+                  });
+                });
+                return;
+              } catch (e) {
+                console.error("ccchunk error", e);
+              }
+              console.error(
+                "chunk error",
+                Object.keys((chunk.error as any).text),
+              );
               finishReason = "error";
               controller.enqueue({ type: "error", error: chunk.error });
               return;
@@ -476,187 +490,79 @@ export class OllamaResponsesLanguageModel implements LanguageModelV2 {
 
             const value = chunk.value;
 
-            if (isResponseOutputItemAddedChunk(value)) {
-              if (value.item.type === "function_call") {
-                ongoingToolCalls[value.output_index] = {
-                  toolName: value.item.name,
-                  toolCallId: value.item.call_id,
-                };
+            // handle error chunks:
+            if ("error" in value) {
+              finishReason = "error";
+              controller.enqueue({ type: "error", error: value.error });
+              return;
+            }
 
-                controller.enqueue({
-                  type: "tool-input-start",
-                  id: value.item.call_id,
-                  toolName: value.item.name,
-                });
-              } else if (value.item.type === "web_search_call") {
-                ongoingToolCalls[value.output_index] = {
-                  toolName: "web_search_preview",
-                  toolCallId: value.item.id,
-                };
+            if (isFirstChunk) {
+              isFirstChunk = false;
 
-                controller.enqueue({
-                  type: "tool-input-start",
-                  id: value.item.id,
-                  toolName: "web_search_preview",
-                });
-              } else if (value.item.type === "computer_call") {
-                ongoingToolCalls[value.output_index] = {
-                  toolName: "computer_use",
-                  toolCallId: value.item.id,
-                };
-
-                controller.enqueue({
-                  type: "tool-input-start",
-                  id: value.item.id,
-                  toolName: "computer_use",
-                });
-              } else if (value.item.type === "message") {
-                controller.enqueue({
-                  type: "text-start",
-                  id: value.item.id,
-                });
-              } else if (value.item.type === "reasoning") {
-                controller.enqueue({
-                  type: "reasoning-start",
-                  id: value.item.id,
-                });
-              }
-            } else if (isResponseOutputItemDoneChunk(value)) {
-              if (value.item.type === "function_call") {
-                ongoingToolCalls[value.output_index] = undefined;
-                hasToolCalls = true;
-
-                controller.enqueue({
-                  type: "tool-input-end",
-                  id: value.item.call_id,
-                });
-
-                controller.enqueue({
-                  type: "tool-call",
-                  toolCallId: value.item.call_id,
-                  toolName: value.item.name,
-                  input: value.item.arguments,
-                });
-              } else if (value.item.type === "web_search_call") {
-                ongoingToolCalls[value.output_index] = undefined;
-                hasToolCalls = true;
-
-                controller.enqueue({
-                  type: "tool-input-end",
-                  id: value.item.id,
-                });
-
-                controller.enqueue({
-                  type: "tool-call",
-                  toolCallId: value.item.id,
-                  toolName: "web_search_preview",
-                  input: "",
-                  providerExecuted: true,
-                });
-
-                controller.enqueue({
-                  type: "tool-result",
-                  toolCallId: value.item.id,
-                  toolName: "web_search_preview",
-                  result: {
-                    type: "web_search_tool_result",
-                    status: value.item.status || "completed",
-                  },
-                  providerExecuted: true,
-                });
-              } else if (value.item.type === "computer_call") {
-                ongoingToolCalls[value.output_index] = undefined;
-                hasToolCalls = true;
-
-                controller.enqueue({
-                  type: "tool-input-end",
-                  id: value.item.id,
-                });
-
-                controller.enqueue({
-                  type: "tool-call",
-                  toolCallId: value.item.id,
-                  toolName: "computer_use",
-                  input: "",
-                  providerExecuted: true,
-                });
-
-                controller.enqueue({
-                  type: "tool-result",
-                  toolCallId: value.item.id,
-                  toolName: "computer_use",
-                  result: {
-                    type: "computer_use_tool_result",
-                    status: value.item.status || "completed",
-                  },
-                  providerExecuted: true,
-                });
-              } else if (value.item.type === "message") {
-                controller.enqueue({
-                  type: "text-end",
-                  id: value.item.id,
-                });
-              } else if (value.item.type === "reasoning") {
-                controller.enqueue({
-                  type: "reasoning-end",
-                  id: value.item.id,
-                });
-              }
-            } else if (isResponseFunctionCallArgumentsDeltaChunk(value)) {
-              const toolCall = ongoingToolCalls[value.output_index];
-
-              if (toolCall != null) {
-                controller.enqueue({
-                  type: "tool-input-delta",
-                  id: toolCall.toolCallId,
-                  delta: value.delta,
-                });
-              }
-            } else if (isResponseCreatedChunk(value)) {
-              responseId = value.response.id;
               controller.enqueue({
                 type: "response-metadata",
-                id: value.response.id,
-                timestamp: new Date(value.response.created_at * 1000),
-                modelId: value.response.model,
-              });
-            } else if (isTextDeltaChunk(value)) {
-              controller.enqueue({
-                type: "text-delta",
-                id: value.item_id,
-                delta: value.delta,
-              });
-            } else if (isResponseReasoningSummaryTextDeltaChunk(value)) {
-              controller.enqueue({
-                type: "reasoning-delta",
-                delta: value.delta,
-                id: value.item_id,
-              });
-            } else if (isResponseFinishedChunk(value)) {
-              finishReason = mapOllamaResponseFinishReason({
-                finishReason: value.response.incomplete_details?.reason,
-                hasToolCalls,
-              });
-              usage.inputTokens = value.response.usage.input_tokens;
-              usage.outputTokens = value.response.usage.output_tokens;
-              usage.totalTokens =
-                value.response.usage.input_tokens +
-                value.response.usage.output_tokens;
-              usage.reasoningTokens =
-                value.response.usage.output_tokens_details?.reasoning_tokens ??
-                undefined;
-              usage.cachedInputTokens =
-                value.response.usage.input_tokens_details?.cached_tokens ??
-                undefined;
-            } else if (isResponseAnnotationAddedChunk(value)) {
-              controller.enqueue({
-                type: "source",
-                sourceType: "url",
-                id: self.config.generateId?.() ?? generateId(),
-                url: value.annotation.url,
-                title: value.annotation.title,
+                ...getResponseMetadata(value),
               });
             }
+
+            if (value.done) {
+              finishReason = mapOllamaFinishReason(value.done_reason);
+              usage = {
+                inputTokens: value.prompt_eval_count || 0,
+                outputTokens: value.eval_count ?? undefined,
+                totalTokens: value.eval_count ?? undefined,
+              };
+            }
+            const delta = value?.message;
+
+            if (delta?.content != null) {
+              controller.enqueue({
+                type: "text-delta",
+                id: "0",
+                delta: delta.content,
+              });
+            }
+
+            if (delta?.thinking) {
+              controller.enqueue({
+                type: "reasoning-delta",
+                id: "0",
+                delta: delta.thinking,
+              });
+            }
+
+            for (const toolCall of delta.tool_calls ?? []) {
+              // Tool call start. Ollama returns all information except the arguments in the first chunk.
+              if (toolCall.function?.name == null) {
+                throw new InvalidResponseDataError({
+                  data: toolCall,
+                  message: `Expected 'function.name' to be a string.`,
+                });
+              }
+
+              if (
+                toolCall.function?.name != null &&
+                toolCall.function?.arguments != null &&
+                Object.keys(toolCall.function.arguments).length > 0
+              ) {
+                const id = generateId();
+
+                controller.enqueue({
+                  type: "tool-input-delta",
+                  id: id,
+                  delta: JSON.stringify(toolCall.function.arguments),
+                });
+
+                controller.enqueue({
+                  type: "tool-call",
+                  toolCallId: id,
+                  toolName: toolCall.function.name,
+                  input: JSON.stringify(toolCall.function.arguments),
+                });
+              }
+            }
+
           },
 
           flush(controller) {
@@ -694,6 +600,37 @@ const textDeltaChunkSchema = z.object({
   type: z.literal("response.output_text.delta"),
   item_id: z.string(),
   delta: z.string(),
+});
+
+const baseOllamaResponseSchema = z.object({
+  model: z.string(),
+  created_at: z.string(),
+  done: z.boolean(),
+  message: z.object({
+    content: z.string(),
+    role: z.string(),
+    thinking: z.string().optional(),
+    tool_calls: z
+      .array(
+        z.object({
+          function: z.object({
+            name: z.string(),
+            arguments: z.record(z.string(), z.any()),
+          }),
+          id: z.string().optional(),
+        }),
+      )
+      .optional()
+      .nullable(),
+  }),
+
+  done_reason: z.string().optional(),
+  eval_count: z.number().optional(),
+  eval_duration: z.number().optional(),
+  load_duration: z.number().optional(),
+  prompt_eval_count: z.number().optional(),
+  prompt_eval_duration: z.number().optional(),
+  total_duration: z.number().optional(),
 });
 
 const responseFinishedChunkSchema = z.object({
@@ -826,57 +763,57 @@ const ollamaResponsesChunkSchema = z.union([
 function isTextDeltaChunk(
   chunk: z.infer<typeof ollamaResponsesChunkSchema>,
 ): chunk is z.infer<typeof textDeltaChunkSchema> {
-  return chunk.type === "response.output_text.delta";
+  return chunk?.type === "response.output_text.delta";
 }
 
 function isResponseOutputItemDoneChunk(
   chunk: z.infer<typeof ollamaResponsesChunkSchema>,
 ): chunk is z.infer<typeof responseOutputItemDoneSchema> {
-  return chunk.type === "response.output_item.done";
+  return chunk?.type === "response.output_item.done";
 }
 
 function isResponseFinishedChunk(
   chunk: z.infer<typeof ollamaResponsesChunkSchema>,
 ): chunk is z.infer<typeof responseFinishedChunkSchema> {
   return (
-    chunk.type === "response.completed" || chunk.type === "response.incomplete"
+    chunk?.type === "response.completed" || chunk.type === "response.incomplete"
   );
 }
 
 function isResponseCreatedChunk(
   chunk: z.infer<typeof ollamaResponsesChunkSchema>,
 ): chunk is z.infer<typeof responseCreatedChunkSchema> {
-  return chunk.type === "response.created";
+  return chunk?.type === "response.created";
 }
 
 function isResponseFunctionCallArgumentsDeltaChunk(
   chunk: z.infer<typeof ollamaResponsesChunkSchema>,
 ): chunk is z.infer<typeof responseFunctionCallArgumentsDeltaSchema> {
-  return chunk.type === "response.function_call_arguments.delta";
+  return chunk?.type === "response.function_call_arguments.delta";
 }
 
 function isResponseOutputItemAddedChunk(
   chunk: z.infer<typeof ollamaResponsesChunkSchema>,
 ): chunk is z.infer<typeof responseOutputItemAddedSchema> {
-  return chunk.type === "response.output_item.added";
+  return chunk?.type === "response.output_item.added";
 }
 
 function isResponseAnnotationAddedChunk(
   chunk: z.infer<typeof ollamaResponsesChunkSchema>,
 ): chunk is z.infer<typeof responseAnnotationAddedSchema> {
-  return chunk.type === "response.output_text.annotation.added";
+  return chunk?.type === "response.output_text.annotation.added";
 }
 
 function isResponseReasoningSummaryTextDeltaChunk(
   chunk: z.infer<typeof ollamaResponsesChunkSchema>,
 ): chunk is z.infer<typeof responseReasoningSummaryTextDeltaSchema> {
-  return chunk.type === "response.reasoning_summary_text.delta";
+  return chunk?.type === "response.reasoning_summary_text.delta";
 }
 
 function isResponseReasoningSummaryPartDoneChunk(
   chunk: z.infer<typeof ollamaResponsesChunkSchema>,
 ): chunk is z.infer<typeof responseReasoningSummaryPartDoneSchema> {
-  return chunk.type === "response.reasoning_summary_part.done";
+  return chunk?.type === "response.reasoning_summary_part.done";
 }
 
 type ResponsesModelConfig = {
