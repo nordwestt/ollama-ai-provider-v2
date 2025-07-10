@@ -11,7 +11,7 @@ This provider now supports:
 The Ollama provider is available in the `ollama-ai-provider-v2` module. You can install it with
 
 ```bash
-npm i ollama-ai-provider-v2
+npm i ollama-ai-provider-v2@alpha
 ```
 
 ## Provider Instance
