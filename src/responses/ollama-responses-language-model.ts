@@ -15,7 +15,7 @@ import {
     ParseResult,
     postJsonToApi,
   } from '@ai-sdk/provider-utils';
-  import { z } from 'zod';
+  import { z } from 'zod/v4';
   import { OllamaConfig } from '../ollama-config';
   import { ollamaFailedResponseHandler } from '../ollama-error';
   import { convertToOllamaResponsesMessages } from './convert-to-ollama-responses-messages';
@@ -58,6 +58,7 @@ import {
       toolChoice,
       responseFormat,
     }: Parameters<LanguageModelV2['doGenerate']>[0]) {
+      console.log('getArgs1', this.modelId);
       const warnings: LanguageModelV2CallWarning[] = [];
       const modelConfig = getResponsesModelConfig(this.modelId);
   
@@ -86,6 +87,7 @@ import {
       if (stopSequences != null) {
         warnings.push({ type: 'unsupported-setting', setting: 'stopSequences' });
       }
+      console.log('getArgs2', this.modelId);
   
       const { messages, warnings: messageWarnings } =
         convertToOllamaResponsesMessages({
@@ -94,15 +96,15 @@ import {
         });
   
       warnings.push(...messageWarnings);
-  
+      console.log('getArgs3', this.modelId);
       const ollamaOptions = await parseProviderOptions({
         provider: 'ollama',
         providerOptions,
         schema: ollamaResponsesProviderOptionsSchema,
       });
-  
+      console.log('getArgs4', this.modelId);
       const strictJsonSchema = ollamaOptions?.strictJsonSchema ?? false;
-  
+      console.log('getArgs5', this.modelId);
       const baseArgs = {
         model: this.modelId,
         input: messages,
@@ -151,7 +153,7 @@ import {
           truncation: 'auto',
         }),
       };
-  
+      console.log('getArgs6', this.modelId);
       if (modelConfig.isReasoningModel) {
         // remove unsupported settings for reasoning models
         // see https://platform.ollama.com/docs/guides/reasoning#limitations
@@ -173,7 +175,7 @@ import {
           });
         }
       }
-  
+      console.log('getArgs7', this.modelId);
       // Validate flex processing support
       if (
         ollamaOptions?.serviceTier === 'flex' &&
@@ -187,7 +189,7 @@ import {
         // Remove from args if not supported
         delete (baseArgs as any).service_tier;
       }
-  
+      console.log('getArgs8', this.modelId);
       const {
         tools: ollamaTools,
         toolChoice: ollamaToolChoice,
@@ -197,7 +199,7 @@ import {
         toolChoice,
         strictJsonSchema,
       });
-  
+      console.log('getArgs9', this.modelId);
       return {
         args: {
           ...baseArgs,
@@ -294,7 +296,7 @@ import {
           case 'reasoning': {
             content.push({
               type: 'reasoning',
-              text: part.summary.map(summary => summary.text).join(),
+              text: part.summary.map((summary: { text: string }) => summary.text).join(),
             });
             break;
           }
@@ -411,7 +413,7 @@ import {
   
       const { responseHeaders, value: response } = await postJsonToApi({
         url: this.config.url({
-          path: '/responses',
+          path: '/chat',
           modelId: this.modelId,
         }),
         headers: combineHeaders(this.config.headers(), options.headers),
