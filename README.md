@@ -25,7 +25,7 @@ import { ollama } from 'ollama-ai-provider-v2';
 ## Example
 
 ```ts
-import { ollama } from 'ollama-ai-provider';
+import { ollama } from 'ollama-ai-provider-v2';
 import { generateText } from 'ai';
 
 const { text } = await generateText({
@@ -37,7 +37,7 @@ const { text } = await generateText({
 ## Thinking mode toggle example
 
 ```ts
-import { ollama } from 'ollama-ai-provider';
+import { ollama } from 'ollama-ai-provider-v2';
 import { generateText } from 'ai';
 
 const { text } = await generateText({
