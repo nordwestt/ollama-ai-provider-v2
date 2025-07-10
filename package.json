@@ -38,18 +38,17 @@
   },
   "dependencies": {
     "@ai-sdk/provider": "2.0.0-beta.1",
-    "@ai-sdk/provider-utils": "3.0.0-beta.1"
+    "@ai-sdk/provider-utils": "3.0.0-beta.2"
   },
   "devDependencies": {
-    "@types/node": "^18",
     "@vercel/ai-tsconfig": "./tsconfig",
     "tsup": "^8",
-    "typescript": "5.6.3",
-    "vitest": "^3.2.4",
-    "zod": "3.25.49"
+    "typescript": "5.8.3",
+    "vitest": "^3.1.4",
+    "zod": "3.25.74"
   },
   "peerDependencies": {
-    "zod": "^3.25.49"
+    "zod": "^3.25.74"
   },
   "engines": {
     "node": ">=18"
