@@ -21,11 +21,14 @@ import {
   postJsonToApi,
   parseProviderOptions,
 } from "@ai-sdk/provider-utils";
-import { z } from "zod";
+import { z } from "zod/v4";
 import { convertToOllamaChatMessages } from "./convert-to-ollama-chat-messages";
 import { mapOllamaChatLogProbsOutput } from "./map-ollama-chat-logprobs";
 import { mapOllamaFinishReason } from "./map-ollama-finish-reason";
-import { OllamaChatModelId, ollamaProviderOptions } from "./ollama-chat-settings";
+import {
+  OllamaChatModelId,
+  ollamaProviderOptions,
+} from "./ollama-chat-settings";
 import {
   ollamaErrorDataSchema,
   ollamaFailedResponseHandler,
@@ -46,15 +49,12 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
 
   readonly modelId: OllamaChatModelId;
   readonly supportedUrls = {
-    'image/*': [/^https?:\/\/.*$/],
+    "image/*": [/^https?:\/\/.*$/],
   };
 
   private readonly config: OllamaChatConfig;
 
-  constructor(
-    modelId: OllamaChatModelId,
-    config: OllamaChatConfig,
-  ) {
+  constructor(modelId: OllamaChatModelId, config: OllamaChatConfig) {
     this.modelId = modelId;
     this.config = config;
   }
@@ -78,19 +78,17 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
     toolChoice,
     providerOptions,
   }: LanguageModelV2CallOptions) {
-
     const warnings: LanguageModelV2CallWarning[] = [];
 
     // Parse provider options
     const ollamaOptions =
       (await parseProviderOptions({
-        provider: 'ollama',
+        provider: "ollama",
         providerOptions,
         schema: ollamaProviderOptions,
       })) ?? {};
 
     const structuredOutputs = ollamaOptions.structuredOutputs ?? true;
-
 
     if (topK != null) {
       warnings.push({
@@ -112,17 +110,14 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
       });
     }
 
-    const messages = convertToOllamaChatMessages(
-      {
-        prompt,
-        systemMessageMode: getSystemMessageMode(this.modelId),
-      },
-    );
+    const messages = convertToOllamaChatMessages({
+      prompt,
+      systemMessageMode: getSystemMessageMode(this.modelId),
+    });
 
     //warnings.push(...messageWarnings);
 
     const strictJsonSchema = ollamaOptions.strictJsonSchema ?? false;
-
 
     const baseArgs = {
       // model id:
@@ -261,7 +256,11 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
   ): Promise<Awaited<ReturnType<LanguageModelV2["doGenerate"]>>> {
     const { args: body, warnings } = await this.getArgs(options);
 
-    const { responseHeaders, value: response, rawValue: rawResponse } = await postJsonToApi({
+    const {
+      responseHeaders,
+      value: response,
+      rawValue: rawResponse,
+    } = await postJsonToApi({
       url: this.config.url({
         path: "/chat",
         modelId: this.modelId,
@@ -281,23 +280,22 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
     const content: Array<LanguageModelV2Content> = [];
 
     const text = response.message.content;
-    if(text != null && text.length > 0){
+    if (text != null && text.length > 0) {
       content.push({
-        type: 'text',
+        type: "text",
         text,
       });
     }
-    
+
     // tool calls:
     for (const toolCall of response.message.tool_calls ?? []) {
       content.push({
-        type: 'tool-call' as const,
+        type: "tool-call" as const,
         toolCallId: toolCall.id ?? generateId(),
         toolName: toolCall.function.name,
         input: JSON.stringify(toolCall.function.arguments),
       });
     }
-
 
     // provider metadata:
     const providerMetadata: SharedV2ProviderMetadata = { ollama: {} };
@@ -310,10 +308,14 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
         outputTokens: response.eval_count ?? undefined,
         totalTokens: response.eval_count ?? undefined,
         reasoningTokens: response.eval_count ?? undefined,
-        cachedInputTokens: undefined
+        cachedInputTokens: undefined,
       },
       request: { body: JSON.stringify(body) },
-      response: {...getResponseMetadata(response), headers: responseHeaders, body: rawResponse},
+      response: {
+        ...getResponseMetadata(response),
+        headers: responseHeaders,
+        body: rawResponse,
+      },
       warnings,
       providerMetadata,
     };
@@ -322,7 +324,6 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
   async doStream(
     options: Parameters<LanguageModelV2["doStream"]>[0],
   ): Promise<Awaited<ReturnType<LanguageModelV2["doStream"]>>> {
-
     const { args, warnings } = await this.getArgs(options);
 
     const body = {
@@ -362,7 +363,7 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
           LanguageModelV2StreamPart
         >({
           start(controller) {
-            controller.enqueue({ type: 'stream-start', warnings });
+            controller.enqueue({ type: "stream-start", warnings });
           },
           transform(chunk, controller) {
             // handle failed chunk parsing / validation:
@@ -375,12 +376,12 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
                   const parsed = JSON.parse(line);
                   controller.enqueue({
                     type: "text-delta",
-                    id: '0',
+                    id: "0",
                     delta: parsed.message.content,
                   });
                   controller.enqueue({
                     type: "reasoning-delta",
-                    id: '0',
+                    id: "0",
                     delta: parsed.message.thinking,
                   });
                 });
@@ -428,7 +429,7 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
             if (delta?.content != null) {
               controller.enqueue({
                 type: "text-delta",
-                id: '0',
+                id: "0",
                 delta: delta.content,
               });
             }
@@ -436,7 +437,7 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
             if (delta?.thinking) {
               controller.enqueue({
                 type: "reasoning-delta",
-                id: '0',
+                id: "0",
                 delta: delta.thinking,
               });
             }
@@ -478,7 +479,7 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
               finishReason,
               usage,
             });
-          }
+          },
         }),
       ),
       request: { body: JSON.stringify(body) },
@@ -519,7 +520,7 @@ const baseOllamaResponseSchema = z.object({
         z.object({
           function: z.object({
             name: z.string(),
-            arguments: z.record(z.any()),
+            arguments: z.record(z.string(), z.any()),
           }),
           id: z.string().optional(),
         }),
