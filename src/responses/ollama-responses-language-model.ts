@@ -6,6 +6,7 @@ import {
   LanguageModelV2FinishReason,
   LanguageModelV2StreamPart,
   LanguageModelV2Usage,
+  SharedV2ProviderMetadata,
 } from "@ai-sdk/provider";
 import {
   combineHeaders,
@@ -221,68 +222,14 @@ export class OllamaResponsesLanguageModel implements LanguageModelV2 {
       rawValue: rawResponse,
     } = await postJsonToApi({
       url: this.config.url({
-        path: "/responses",
+        path: "/chat",
         modelId: this.modelId,
       }),
       headers: combineHeaders(this.config.headers(), options.headers),
-      body,
+      body: { ...body, stream: false },
       failedResponseHandler: ollamaFailedResponseHandler,
       successfulResponseHandler: createJsonResponseHandler(
-        z.object({
-          id: z.string(),
-          created_at: z.number(),
-          model: z.string(),
-          output: z.array(
-            z.discriminatedUnion("type", [
-              z.object({
-                type: z.literal("message"),
-                role: z.literal("assistant"),
-                content: z.array(
-                  z.object({
-                    type: z.literal("output_text"),
-                    text: z.string(),
-                    annotations: z.array(
-                      z.object({
-                        type: z.literal("url_citation"),
-                        start_index: z.number(),
-                        end_index: z.number(),
-                        url: z.string(),
-                        title: z.string(),
-                      }),
-                    ),
-                  }),
-                ),
-              }),
-              z.object({
-                type: z.literal("function_call"),
-                call_id: z.string(),
-                name: z.string(),
-                arguments: z.string(),
-              }),
-              z.object({
-                type: z.literal("web_search_call"),
-                id: z.string(),
-                status: z.string().optional(),
-              }),
-              z.object({
-                type: z.literal("computer_call"),
-                id: z.string(),
-                status: z.string().optional(),
-              }),
-              z.object({
-                type: z.literal("reasoning"),
-                summary: z.array(
-                  z.object({
-                    type: z.literal("summary_text"),
-                    text: z.string(),
-                  }),
-                ),
-              }),
-            ]),
-          ),
-          incomplete_details: z.object({ reason: z.string() }).nullable(),
-          usage: usageSchema,
-        }),
+        baseOllamaResponseSchema
       ),
       abortSignal: options.abortSignal,
       fetch: this.config.fetch,
@@ -290,121 +237,45 @@ export class OllamaResponsesLanguageModel implements LanguageModelV2 {
 
     const content: Array<LanguageModelV2Content> = [];
 
-    // map response content to content array
-    for (const part of response.output) {
-      switch (part.type) {
-        case "reasoning": {
-          content.push({
-            type: "reasoning",
-            text: part.summary
-              .map((summary: { text: string }) => summary.text)
-              .join(),
-          });
-          break;
-        }
-
-        case "message": {
-          for (const contentPart of part.content) {
-            content.push({
-              type: "text",
-              text: contentPart.text,
-            });
-
-            for (const annotation of contentPart.annotations) {
-              content.push({
-                type: "source",
-                sourceType: "url",
-                id: this.config.generateId?.() ?? generateId(),
-                url: annotation.url,
-                title: annotation.title,
-              });
-            }
-          }
-          break;
-        }
-
-        case "function_call": {
-          content.push({
-            type: "tool-call",
-            toolCallId: part.call_id,
-            toolName: part.name,
-            input: part.arguments,
-          });
-          break;
-        }
-
-        case "web_search_call": {
-          content.push({
-            type: "tool-call",
-            toolCallId: part.id,
-            toolName: "web_search_preview",
-            input: "",
-            providerExecuted: true,
-          });
-
-          content.push({
-            type: "tool-result",
-            toolCallId: part.id,
-            toolName: "web_search_preview",
-            result: { status: part.status || "completed" },
-            providerExecuted: true,
-          });
-          break;
-        }
-
-        case "computer_call": {
-          content.push({
-            type: "tool-call",
-            toolCallId: part.id,
-            toolName: "computer_use",
-            input: "",
-            providerExecuted: true,
-          });
-
-          content.push({
-            type: "tool-result",
-            toolCallId: part.id,
-            toolName: "computer_use",
-            result: {
-              type: "computer_use_tool_result",
-              status: part.status || "completed",
-            },
-            providerExecuted: true,
-          });
-          break;
-        }
-      }
+    const text = response.message.content;
+    if (text != null && text.length > 0) {
+      content.push({
+        type: "text",
+        text,
+      });
     }
+
+    // tool calls:
+    for (const toolCall of response.message.tool_calls ?? []) {
+      content.push({
+        type: "tool-call" as const,
+        toolCallId: toolCall.id ?? generateId(),
+        toolName: toolCall.function.name,
+        input: JSON.stringify(toolCall.function.arguments),
+      });
+    }
+
+    // provider metadata:
+    const providerMetadata: SharedV2ProviderMetadata = { ollama: {} };
 
     return {
       content,
-      finishReason: mapOllamaResponseFinishReason({
-        finishReason: response.incomplete_details?.reason,
-        hasToolCalls: content.some((part) => part.type === "tool-call"),
-      }),
+      finishReason: mapOllamaFinishReason(response.done_reason),
       usage: {
-        inputTokens: response.usage.input_tokens,
-        outputTokens: response.usage.output_tokens,
-        totalTokens: response.usage.input_tokens + response.usage.output_tokens,
-        reasoningTokens:
-          response.usage.output_tokens_details?.reasoning_tokens ?? undefined,
-        cachedInputTokens:
-          response.usage.input_tokens_details?.cached_tokens ?? undefined,
+        inputTokens: response.prompt_eval_count ?? undefined,
+        outputTokens: response.eval_count ?? undefined,
+        totalTokens: response.eval_count ?? undefined,
+        reasoningTokens: response.eval_count ?? undefined,
+        cachedInputTokens: undefined,
       },
-      request: { body },
+      request: { body: JSON.stringify(body) },
       response: {
-        id: response.id,
-        timestamp: new Date(response.created_at * 1000),
-        modelId: response.model,
+        ...getResponseMetadata(response),
         headers: responseHeaders,
         body: rawResponse,
       },
-      providerMetadata: {
-        ollama: {
-          responseId: response.id,
-        },
-      },
       warnings,
+      providerMetadata,
     };
   }
 
