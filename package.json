@@ -37,8 +37,8 @@
     }
   },
   "dependencies": {
-    "@ai-sdk/provider": "2.0.0-beta.1",
-    "@ai-sdk/provider-utils": "3.0.0-beta.2"
+    "@ai-sdk/provider": "2.0.0",
+    "@ai-sdk/provider-utils": "3.0.1"
   },
   "devDependencies": {
     "@types/node": "20.17.24",
@@ -46,10 +46,10 @@
     "tsup": "^8",
     "typescript": "5.8.3",
     "vitest": "^3.1.4",
-    "zod": "3.25.49"
+    "zod": "4.0.16"
   },
   "peerDependencies": {
-    "zod": "^3.25.49"
+    "zod": "^4.0.16"
   },
   "engines": {
     "node": ">=18"

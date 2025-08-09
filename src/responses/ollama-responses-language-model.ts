@@ -201,6 +201,8 @@ export class OllamaResponsesLanguageModel implements LanguageModelV2 {
       toolChoice,
       strictJsonSchema,
     });
+
+    console.log("Ollama tools:", ollamaTools);
     return {
       args: {
         ...baseArgs,
@@ -229,7 +231,7 @@ export class OllamaResponsesLanguageModel implements LanguageModelV2 {
       body: { ...body, stream: false },
       failedResponseHandler: ollamaFailedResponseHandler,
       successfulResponseHandler: createJsonResponseHandler(
-        baseOllamaResponseSchema
+        baseOllamaResponseSchema,
       ),
       abortSignal: options.abortSignal,
       fetch: this.config.fetch,
@@ -434,7 +436,6 @@ export class OllamaResponsesLanguageModel implements LanguageModelV2 {
                 });
               }
             }
-
           },
 
           flush(controller) {
