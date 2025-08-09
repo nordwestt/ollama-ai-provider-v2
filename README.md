@@ -1,4 +1,4 @@
-# Ollama Provider V2 for the Vercel AI SDK
+# Ollama Provider V2 for the Vercel AI SDK (now for SDK 5)
 
 The **[Ollama Provider V2](https://github.com/nordwestt/ollama-ai-provider-v2)** for the [AI SDK](https://sdk.vercel.ai/docs) has been created as the original [ollama-ai-provider](https://www.npmjs.com/package/ollama-ai-provider) was not being actively maintained. 
 
@@ -11,7 +11,12 @@ This provider now supports:
 The Ollama provider is available in the `ollama-ai-provider-v2` module. You can install it with
 
 ```bash
-npm i ollama-ai-provider-v2@alpha
+npm i ollama-ai-provider-v2
+```
+
+To update an existing installation to the new major version that supports AI SDK 5, simply do
+```bash
+npm update ollama-ai-provider-v2
 ```
 
 ## Provider Instance
