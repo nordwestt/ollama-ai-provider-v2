@@ -1,42 +1,39 @@
 import {
-  InvalidResponseDataError,
   LanguageModelV2,
   LanguageModelV2CallWarning,
-  LanguageModelV2Content,
-  LanguageModelV2FinishReason,
-  LanguageModelV2StreamPart,
-  LanguageModelV2Usage,
-  SharedV2ProviderMetadata,
 } from "@ai-sdk/provider";
 import {
   combineHeaders,
   createJsonResponseHandler,
   createJsonStreamResponseHandler,
-  generateId,
-  parseProviderOptions,
-  ParseResult,
   postJsonToApi,
 } from "@ai-sdk/provider-utils";
-import { z } from "zod/v4";
 import { OllamaConfig } from "../common/ollama-config";
 import { ollamaFailedResponseHandler } from "../completion/ollama-error";
-import { convertToOllamaResponsesMessages } from "./convert-to-ollama-responses-messages";
-import { prepareResponsesTools } from "./ollama-responses-prepare-tools";
 import { OllamaChatModelId } from "../ollama-chat-settings";
-import { convertToOllamaChatMessages } from "../adaptors/convert-to-ollama-chat-messages";
-import { getResponseMetadata } from "../common/get-response-metadata";
-import { mapOllamaFinishReason } from "../adaptors/map-ollama-finish-reason";
+import { 
+  OllamaRequestBuilder,
+  OllamaResponsesProviderOptions 
+} from "./ollama-responses-request-builder";
+import { 
+  OllamaResponseProcessor, 
+  baseOllamaResponseSchema 
+} from "./ollama-responses-processor";
+import { OllamaStreamProcessor } from "./ollama-responses-stream-processor";
 
 export class OllamaResponsesLanguageModel implements LanguageModelV2 {
   readonly specificationVersion = "v2";
-
   readonly modelId: OllamaChatModelId;
 
   private readonly config: OllamaConfig;
+  private readonly requestBuilder: OllamaRequestBuilder;
+  private readonly responseProcessor: OllamaResponseProcessor;
 
   constructor(modelId: OllamaChatModelId, config: OllamaConfig) {
     this.modelId = modelId;
     this.config = config;
+    this.requestBuilder = new OllamaRequestBuilder();
+    this.responseProcessor = new OllamaResponseProcessor(config);
   }
 
   readonly supportedUrls: Record<string, RegExp[]> = {
@@ -47,105 +44,10 @@ export class OllamaResponsesLanguageModel implements LanguageModelV2 {
     return this.config.provider;
   }
 
-  private async getArgs({
-    maxOutputTokens,
-    temperature,
-    stopSequences,
-    topP,
-    topK,
-    presencePenalty,
-    frequencyPenalty,
-    seed,
-    prompt,
-    providerOptions,
-    tools,
-    toolChoice,
-    responseFormat,
-  }: Parameters<LanguageModelV2["doGenerate"]>[0]) {
-    const warnings: LanguageModelV2CallWarning[] = [];
-
-    if (topK != null) {
-      warnings.push({ type: "unsupported-setting", setting: "topK" });
-    }
-
-    if (seed != null) {
-      warnings.push({ type: "unsupported-setting", setting: "seed" });
-    }
-
-    if (presencePenalty != null) {
-      warnings.push({
-        type: "unsupported-setting",
-        setting: "presencePenalty",
-      });
-    }
-
-    if (frequencyPenalty != null) {
-      warnings.push({
-        type: "unsupported-setting",
-        setting: "frequencyPenalty",
-      });
-    }
-
-    if (stopSequences != null) {
-      warnings.push({ type: "unsupported-setting", setting: "stopSequences" });
-    }
-
-    const { messages, warnings: messageWarnings } =
-      convertToOllamaResponsesMessages({
-        prompt,
-        systemMessageMode: "system", // Ollama uses standard system messages
-      });
-
-    warnings.push(...messageWarnings);
-    const ollamaOptions = await parseProviderOptions({
-      provider: "ollama",
-      providerOptions,
-      schema: ollamaResponsesProviderOptionsSchema,
-    });
-    const strictJsonSchema = ollamaOptions?.strictJsonSchema ?? false;
-    const baseArgs = {
-      model: this.modelId,
-      messages: convertToOllamaChatMessages({
-        prompt,
-        systemMessageMode: "system",
-      }),
-      temperature,
-      top_p: topP,
-      max_output_tokens: maxOutputTokens,
-
-      ...(responseFormat?.type === "json" && {
-        format: responseFormat.schema != null ? responseFormat.schema : "json",
-      }),
-
-      // Ollama-supported provider options:
-      user: ollamaOptions?.user,
-      think: ollamaOptions?.think ?? false,
-    };
-    
-    const {
-      tools: ollamaTools,
-      toolChoice: ollamaToolChoice,
-      toolWarnings,
-    } = prepareResponsesTools({
-      tools,
-      toolChoice,
-      strictJsonSchema,
-    });
-
-    return {
-      args: {
-        ...baseArgs,
-        tools: ollamaTools,
-        tool_choice: ollamaToolChoice,
-      },
-      warnings: [...warnings, ...toolWarnings],
-    };
-  }
-
   async doGenerate(
     options: Parameters<LanguageModelV2["doGenerate"]>[0],
   ): Promise<Awaited<ReturnType<LanguageModelV2["doGenerate"]>>> {
-    const { args: body, warnings } = await this.getArgs(options);
+    const { args: body, warnings } = await this.prepareRequest(options);
 
     const {
       responseHeaders,
@@ -159,46 +61,15 @@ export class OllamaResponsesLanguageModel implements LanguageModelV2 {
       headers: combineHeaders(this.config.headers(), options.headers),
       body: { ...body, stream: false },
       failedResponseHandler: ollamaFailedResponseHandler,
-      successfulResponseHandler: createJsonResponseHandler(
-        baseOllamaResponseSchema,
-      ),
+      successfulResponseHandler: createJsonResponseHandler(baseOllamaResponseSchema),
       abortSignal: options.abortSignal,
       fetch: this.config.fetch,
     });
 
-    const content: Array<LanguageModelV2Content> = [];
-
-    const text = response.message.content;
-    if (text != null && text.length > 0) {
-      content.push({
-        type: "text",
-        text,
-      });
-    }
-
-    // tool calls:
-    for (const toolCall of response.message.tool_calls ?? []) {
-      content.push({
-        type: "tool-call" as const,
-        toolCallId: toolCall.id ?? (this.config.generateId?.() ?? generateId()),
-        toolName: toolCall.function.name,
-        input: JSON.stringify(toolCall.function.arguments),
-      });
-    }
-
-    // provider metadata:
-    const providerMetadata: SharedV2ProviderMetadata = { ollama: {} };
+    const processedResponse = this.responseProcessor.processGenerateResponse(response);
 
     return {
-      content,
-      finishReason: mapOllamaFinishReason(response.done_reason),
-      usage: {
-        inputTokens: response.prompt_eval_count ?? undefined,
-        outputTokens: response.eval_count ?? undefined,
-        totalTokens: (response.prompt_eval_count ?? 0) + (response.eval_count ?? 0),
-        reasoningTokens: undefined, // Ollama doesn't provide separate reasoning tokens
-        cachedInputTokens: undefined,
-      },
+      ...processedResponse,
       request: { body: JSON.stringify(body) },
       response: {
         modelId: this.modelId,
@@ -207,14 +78,13 @@ export class OllamaResponsesLanguageModel implements LanguageModelV2 {
         body: rawResponse,
       },
       warnings,
-      providerMetadata,
     };
   }
 
   async doStream(
     options: Parameters<LanguageModelV2["doStream"]>[0],
   ): Promise<Awaited<ReturnType<LanguageModelV2["doStream"]>>> {
-    const { args: body, warnings } = await this.getArgs(options);
+    const { args: body, warnings } = await this.prepareRequest(options);
 
     const { responseHeaders, value: response } = await postJsonToApi({
       url: this.config.url({
@@ -222,273 +92,31 @@ export class OllamaResponsesLanguageModel implements LanguageModelV2 {
         modelId: this.modelId,
       }),
       headers: combineHeaders(this.config.headers(), options.headers),
-      body: {
-        ...body,
-        stream: true,
-      },
+      body: { ...body, stream: true },
       failedResponseHandler: ollamaFailedResponseHandler,
-      successfulResponseHandler: createJsonStreamResponseHandler(
-        baseOllamaResponseSchema,
-      ),
+      successfulResponseHandler: createJsonStreamResponseHandler(baseOllamaResponseSchema),
       abortSignal: options.abortSignal,
       fetch: this.config.fetch,
     });
 
-    const self = this;
-
-    let finishReason: LanguageModelV2FinishReason = "unknown";
-    let usage: LanguageModelV2Usage = {
-      inputTokens: undefined,
-      outputTokens: undefined,
-      totalTokens: undefined,
-    };
-    let responseId: string | null = null;
-    const ongoingToolCalls: Record<
-      number,
-      { toolName: string; toolCallId: string } | undefined
-    > = {};
-    let hasToolCalls = false;
-    let isFirstChunk = true;
-    let hasTextStarted = false;
-    let hasReasoningStarted = false;
-    let textEnded = false;
-    let reasoningEnded = false;
-    let textId = crypto.randomUUID();
+    const streamProcessor = new OllamaStreamProcessor(this.config);
 
     return {
       stream: response.pipeThrough(
-        new TransformStream<
-          ParseResult<z.infer<typeof baseOllamaResponseSchema>>,
-          LanguageModelV2StreamPart
-        >({
-          start(controller) {
-            controller.enqueue({ type: "stream-start", warnings });
-          },
-
-          transform(chunk, controller) {
-            if ((options as any)?.includeRawChunks) {
-              controller.enqueue({ type: "raw", rawValue: (chunk as any).rawValue });
-            }
-            // Normalize chunk into one or more valid response objects (handles NDJSON edge cases)
-            const values = extractOllamaResponseObjectsFromChunk(chunk);
-
-            if (values.length === 0) {
-              // If we could not parse anything meaningful, propagate the original error if present
-              if (!chunk.success) {
-                finishReason = "error";
-                controller.enqueue({ type: "error", error: chunk.error });
-                return;
-              }
-              return;
-            }
-
-            for (const value of values) {
-              // handle error-like chunks (not expected for base schema but kept for safety)
-              if ((value as any) && typeof (value as any) === "object" && "error" in (value as any)) {
-                finishReason = "error";
-                controller.enqueue({ type: "error", error: (value as any).error });
-                continue;
-              }
-
-              if (isFirstChunk) {
-                isFirstChunk = false;
-
-                controller.enqueue({
-                  type: "response-metadata",
-                  ...getResponseMetadata(value as any),
-                });
-              }
-
-              if (value.done) {
-                finishReason = mapOllamaFinishReason(value.done_reason);
-                usage = {
-                  inputTokens: value.prompt_eval_count || 0,
-                  outputTokens: value.eval_count ?? undefined,
-                  totalTokens: (value.prompt_eval_count ?? 0) + (value.eval_count ?? 0),
-                };
-
-                // Close any started streams at done
-                if (hasTextStarted && !textEnded) {
-                  controller.enqueue({ type: "text-end", id: textId });
-                  textEnded = true;
-                }
-                if (hasReasoningStarted && !reasoningEnded) {
-                  controller.enqueue({ type: "reasoning-end", id: "0" });
-                  reasoningEnded = true;
-                }
-              }
-              const delta = value?.message;
-
-              if (delta?.content != null) {
-                if (!hasTextStarted) {
-                  controller.enqueue({ type: "text-start", id: textId });
-                  hasTextStarted = true;
-                }
-                controller.enqueue({
-                  type: "text-delta",
-                  id: textId,
-                  delta: delta.content,
-                });
-              }
-
-              if (delta?.thinking) {
-                if (!hasReasoningStarted) {
-                  controller.enqueue({ type: "reasoning-start", id: "0" });
-                  hasReasoningStarted = true;
-                }
-                controller.enqueue({
-                  type: "reasoning-delta",
-                  id: "0",
-                  delta: delta.thinking,
-                });
-              }
-
-              for (const toolCall of delta.tool_calls ?? []) {
-                if (toolCall.function?.name == null) {
-                  throw new InvalidResponseDataError({
-                    data: toolCall,
-                    message: `Expected 'function.name' to be a string.`,
-                  });
-                }
-
-                if (
-                  toolCall.function?.name != null &&
-                  toolCall.function?.arguments != null &&
-                  Object.keys(toolCall.function.arguments).length > 0
-                ) {
-                  const id = toolCall.id ?? (self.config.generateId?.() ?? generateId());
-
-                  controller.enqueue({
-                    type: "tool-input-start",
-                    id: id,
-                    toolName: toolCall.function.name,
-                  });
-
-                  controller.enqueue({
-                    type: "tool-input-delta",
-                    id: id,
-                    delta: JSON.stringify(toolCall.function.arguments),
-                  });
-
-                  controller.enqueue({
-                    type: "tool-input-end",
-                    id: id,
-                  });
-
-                  controller.enqueue({
-                    type: "tool-call",
-                    toolCallId: id,
-                    toolName: toolCall.function.name,
-                    input: JSON.stringify(toolCall.function.arguments),
-                  });
-                  hasToolCalls = true;
-                }
-              }
-            }
-          },
-
-          flush(controller) {
-            // Ensure any started segments are properly closed
-            if (hasTextStarted && !textEnded) {
-              controller.enqueue({ type: "text-end", id: "0" });
-            }
-            if (hasReasoningStarted && !reasoningEnded) {
-              controller.enqueue({ type: "reasoning-end", id: "0" });
-            }
-            controller.enqueue({
-              type: "finish",
-              finishReason,
-              usage,
-              providerMetadata: {
-                ollama: {
-                  responseId,
-                },
-              },
-            });
-          },
-        }),
+        streamProcessor.createTransformStream(warnings, options)
       ),
       request: { body },
       response: { headers: responseHeaders },
     };
   }
+
+  private async prepareRequest(options: Parameters<LanguageModelV2["doGenerate"]>[0]) {
+    return await this.requestBuilder.buildRequest({
+      modelId: this.modelId,
+      ...options,
+    });
+  }
 }
 
-const baseOllamaResponseSchema = z.object({
-  model: z.string(),
-  created_at: z.string(),
-  done: z.boolean(),
-  message: z.object({
-    content: z.string(),
-    role: z.string(),
-    thinking: z.string().optional(),
-    tool_calls: z
-      .array(
-        z.object({
-          function: z.object({
-            name: z.string(),
-            arguments: z.record(z.string(), z.any()),
-          }),
-          id: z.string().optional(),
-        }),
-      )
-      .optional()
-      .nullable(),
-  }),
-
-  done_reason: z.string().optional(),
-  eval_count: z.number().optional(),
-  eval_duration: z.number().optional(),
-  load_duration: z.number().optional(),
-  prompt_eval_count: z.number().optional(),
-  prompt_eval_duration: z.number().optional(),
-  total_duration: z.number().optional(),
-});
-
-/**
- * Extracts one or more valid Ollama response objects from a stream chunk.
- * Handles both successful parsed chunks and error chunks that may contain
- * multiple JSON objects separated by newlines (NDJSON-like behavior).
- */
-function extractOllamaResponseObjectsFromChunk(
-  chunk: ParseResult<z.infer<typeof baseOllamaResponseSchema>>,
-): Array<z.infer<typeof baseOllamaResponseSchema>> {
-  if (chunk.success) {
-    return [chunk.value];
-  }
-
-  const results: Array<z.infer<typeof baseOllamaResponseSchema>> = [];
-  const raw = (chunk.error as any)?.text;
-  if (typeof raw !== "string" || raw.length === 0) {
-    return results;
-  }
-
-  const lines = raw.split(/\r?\n/);
-  for (const line of lines) {
-    const trimmed = line.trim();
-    if (trimmed === "") continue;
-    try {
-      const parsed = JSON.parse(trimmed);
-      const validated = baseOllamaResponseSchema.safeParse(parsed);
-      if (validated.success) {
-        results.push(validated.data);
-      }
-    } catch {
-      // Ignore malformed line; continue with remaining lines
-    }
-  }
-
-  return results;
-}
-
-const ollamaResponsesProviderOptionsSchema = z.object({
-  // Ollama-specific options that are actually supported
-  user: z.string().nullish(),
-  think: z.boolean().nullish(),
-  parallelToolCalls: z.boolean().nullish(),
-  strictJsonSchema: z.boolean().nullish(),
-});
-
-export type OllamaResponsesProviderOptions = z.infer<
-  typeof ollamaResponsesProviderOptionsSchema
->;
+// Re-export types for convenience
+export type { OllamaResponsesProviderOptions };
