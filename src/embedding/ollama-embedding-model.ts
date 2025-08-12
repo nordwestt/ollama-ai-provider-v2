@@ -12,7 +12,7 @@ import { OllamaConfig } from "../ollama-config";
 import {
   OllamaEmbeddingModelId,
   OllamaEmbeddingSettings,
-} from "../ollama-embedding-settings";
+} from "./ollama-embedding-settings";
 import { ollamaFailedResponseHandler } from "../ollama-error";
 
 export class OllamaEmbeddingModel implements EmbeddingModelV2<string> {

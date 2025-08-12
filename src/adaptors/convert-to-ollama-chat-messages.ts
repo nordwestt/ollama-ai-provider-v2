@@ -1,8 +1,6 @@
 import {
   LanguageModelV2Prompt,
-  UnsupportedFunctionalityError,
 } from '@ai-sdk/provider';
-import { convertUint8ArrayToBase64 } from '@ai-sdk/provider-utils';
 import { OllamaChatPrompt } from './ollama-chat-prompt';
 
 export function convertToOllamaChatMessages({

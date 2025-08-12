@@ -15,11 +15,11 @@ import {
   OllamaCompletionModelId,
   OllamaCompletionSettings,
 } from './ollama-completion-settings';
-import { OllamaEmbeddingModel } from './models/ollama-embedding-model';
+import { OllamaEmbeddingModel } from './embedding/ollama-embedding-model';
 import {
   OllamaEmbeddingModelId,
   OllamaEmbeddingSettings,
-} from './ollama-embedding-settings';
+} from './embedding/ollama-embedding-settings';
 import { OllamaResponsesModelId } from './ollama-responses-settings';
 import { OllamaResponsesLanguageModel } from './responses/ollama-responses-language-model';
 
@@ -187,7 +187,7 @@ export function createOllama(
   };
 
   provider.languageModel = createLanguageModel;
-  provider.chat = createChatModel;
+  provider.chat = createLanguageModel;
   provider.completion = createCompletionModel;
   provider.embedding = createEmbeddingModel;
   provider.textEmbedding = createEmbeddingModel;

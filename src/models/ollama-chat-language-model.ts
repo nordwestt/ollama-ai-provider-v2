@@ -22,8 +22,8 @@ import {
   parseProviderOptions,
 } from "@ai-sdk/provider-utils";
 import { z } from "zod/v4";
-import { convertToOllamaChatMessages } from "../convert-to-ollama-chat-messages";
-import { mapOllamaFinishReason } from "../map-ollama-finish-reason";
+import { convertToOllamaChatMessages } from "../adaptors/convert-to-ollama-chat-messages";
+import { mapOllamaFinishReason } from "../adaptors/map-ollama-finish-reason";
 import {
   OllamaChatModelId,
   ollamaProviderOptions,

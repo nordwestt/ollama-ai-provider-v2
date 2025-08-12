@@ -17,8 +17,8 @@ import {
   postJsonToApi,
 } from "@ai-sdk/provider-utils";
 import { z } from "zod/v4";
-import { convertToOllamaCompletionPrompt } from "./convert-to-ollama-completion-prompt";
-import { mapOllamaFinishReason } from "./map-ollama-finish-reason";
+import { convertToOllamaCompletionPrompt } from "./adaptors/convert-to-ollama-completion-prompt";
+import { mapOllamaFinishReason } from "./adaptors/map-ollama-finish-reason";
 import {
   OllamaCompletionModelId,
   OllamaCompletionSettings,
