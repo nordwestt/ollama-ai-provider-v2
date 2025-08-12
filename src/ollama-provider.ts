@@ -17,7 +17,7 @@ import {
   OllamaCompletionModelId,
   OllamaCompletionSettings,
 } from './ollama-completion-settings';
-import { OllamaEmbeddingModel } from './ollama-embedding-model';
+import { OllamaEmbeddingModel } from './models/ollama-embedding-model';
 import {
   OllamaEmbeddingModelId,
   OllamaEmbeddingSettings,

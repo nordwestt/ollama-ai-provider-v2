@@ -1,6 +1,6 @@
 import { EmbeddingModelV1Embedding } from '@ai-sdk/provider';
 import { JsonTestServer } from '@ai-sdk/provider-utils/test';
-import { createOllama } from './ollama-provider';
+import { createOllama } from '../ollama-provider';
 
 const dummyEmbeddings = [
   [0.1, 0.2, 0.3, 0.4, 0.5],
