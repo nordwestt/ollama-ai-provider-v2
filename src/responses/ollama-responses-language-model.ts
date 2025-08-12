@@ -272,7 +272,8 @@ export class OllamaResponsesLanguageModel implements LanguageModelV2 {
       },
       request: { body: JSON.stringify(body) },
       response: {
-        ...getResponseMetadata(response),
+        modelId: this.modelId,
+        timestamp: new Date(),
         headers: responseHeaders,
         body: rawResponse,
       },

@@ -18,7 +18,6 @@ import {
 } from "@ai-sdk/provider-utils";
 import { z } from "zod/v4";
 import { convertToOllamaCompletionPrompt } from "./convert-to-ollama-completion-prompt";
-import { mapOllamaCompletionLogProbs } from "./map-ollama-completion-logprobs";
 import { mapOllamaFinishReason } from "./map-ollama-finish-reason";
 import {
   OllamaCompletionModelId,

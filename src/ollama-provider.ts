@@ -29,7 +29,7 @@ export interface OllamaProvider extends ProviderV2 {
   /**
 Creates an Ollama model for text generation.
    */
-  languageModel(modelId: OllamaResponsesModelId): OllamaResponsesLanguageModel;
+  languageModel(modelId: OllamaResponsesModelId): LanguageModelV2;
 
   /**
 Creates an Ollama chat model for text generation.
