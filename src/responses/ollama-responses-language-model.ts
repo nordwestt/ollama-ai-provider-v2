@@ -156,40 +156,7 @@ export class OllamaResponsesLanguageModel implements LanguageModelV2 {
         truncation: "auto",
       }),
     };
-    if (modelConfig.isReasoningModel) {
-      // remove unsupported settings for reasoning models
-      // see https://platform.ollama.com/docs/guides/reasoning#limitations
-      if (baseArgs.temperature != null) {
-        baseArgs.temperature = undefined;
-        warnings.push({
-          type: "unsupported-setting",
-          setting: "temperature",
-          details: "temperature is not supported for reasoning models",
-        });
-      }
-
-      if (baseArgs.top_p != null) {
-        baseArgs.top_p = undefined;
-        warnings.push({
-          type: "unsupported-setting",
-          setting: "topP",
-          details: "topP is not supported for reasoning models",
-        });
-      }
-    }
-    // Validate flex processing support
-    if (
-      ollamaOptions?.serviceTier === "flex" &&
-      !supportsFlexProcessing(this.modelId)
-    ) {
-      warnings.push({
-        type: "unsupported-setting",
-        setting: "serviceTier",
-        details: "flex processing is only available for o3 and o4-mini models",
-      });
-      // Remove from args if not supported
-      delete (baseArgs as any).service_tier;
-    }
+    
     const {
       tools: ollamaTools,
       toolChoice: ollamaToolChoice,
