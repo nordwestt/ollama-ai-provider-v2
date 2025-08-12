@@ -49,27 +49,6 @@ export function prepareResponsesTools({
           },
         });
         break;
-      case "provider-defined":
-        switch (tool.id) {
-          case "ollama.web_search_preview":
-            ollamaTools.push({
-              type: "web_search_preview",
-              search_context_size: tool.args.searchContextSize as
-                | "low"
-                | "medium"
-                | "high",
-              user_location: tool.args.userLocation as {
-                type: "approximate";
-                city: string;
-                region: string;
-              },
-            });
-            break;
-          default:
-            toolWarnings.push({ type: "unsupported-tool", tool });
-            break;
-        }
-        break;
       default:
         toolWarnings.push({ type: "unsupported-tool", tool });
         break;
@@ -91,7 +70,7 @@ export function prepareResponsesTools({
       return {
         tools: ollamaTools,
         toolChoice:
-          toolChoice.toolName === "web_search_preview"
+          toolChoice.toolName == "web_search_preview"
             ? { type: "web_search_preview" }
             : { type: "function", name: toolChoice.toolName },
         toolWarnings,

@@ -8,7 +8,6 @@ import {
   FetchFunction,
   withoutTrailingSlash,
 } from '@ai-sdk/provider-utils';
-import { OllamaChatLanguageModel } from './models/ollama-chat-language-model';
 import { OllamaChatModelId, ollamaProviderOptions } from './ollama-chat-settings';
 import { OllamaCompletionLanguageModel } from './ollama-completion-language-model';
 import {
@@ -131,14 +130,6 @@ export function createOllama(
     'Ollama-Project': options.project,
     ...options.headers,
   });
-
-  const createChatModel = (modelId: OllamaChatModelId) =>
-    new OllamaChatLanguageModel(modelId, {
-      provider: `${providerName}.chat`,
-      url: ({ path }) => `${baseURL}${path}`,
-      headers: getHeaders,
-      fetch: options.fetch,
-    });
 
   const createCompletionModel = (
     modelId: OllamaCompletionModelId,
