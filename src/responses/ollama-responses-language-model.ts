@@ -289,6 +289,7 @@ export class OllamaResponsesLanguageModel implements LanguageModelV2 {
     let hasReasoningStarted = false;
     let textEnded = false;
     let reasoningEnded = false;
+    let textId = crypto.randomUUID();
 
     return {
       stream: response.pipeThrough(
@@ -344,7 +345,7 @@ export class OllamaResponsesLanguageModel implements LanguageModelV2 {
 
                 // Close any started streams at done
                 if (hasTextStarted && !textEnded) {
-                  controller.enqueue({ type: "text-end", id: "0" });
+                  controller.enqueue({ type: "text-end", id: textId });
                   textEnded = true;
                 }
                 if (hasReasoningStarted && !reasoningEnded) {
@@ -356,12 +357,12 @@ export class OllamaResponsesLanguageModel implements LanguageModelV2 {
 
               if (delta?.content != null) {
                 if (!hasTextStarted) {
-                  controller.enqueue({ type: "text-start", id: "0" });
+                  controller.enqueue({ type: "text-start", id: textId });
                   hasTextStarted = true;
                 }
                 controller.enqueue({
                   type: "text-delta",
-                  id: "0",
+                  id: textId,
                   delta: delta.content,
                 });
               }
