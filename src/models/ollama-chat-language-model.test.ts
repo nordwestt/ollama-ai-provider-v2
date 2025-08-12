@@ -7,7 +7,7 @@ import {
   createTestServer,
   isNodeVersion,
 } from '@ai-sdk/provider-utils/test';
-import { createOllama } from './ollama-provider';
+import { createOllama } from '../ollama-provider';
 
 const TEST_PROMPT: LanguageModelV2Prompt = [
   { role: 'user', content: [{ type: 'text', text: 'Hello' }] },

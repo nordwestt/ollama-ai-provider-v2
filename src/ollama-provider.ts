@@ -10,7 +10,7 @@ import {
   FetchFunction,
   withoutTrailingSlash,
 } from '@ai-sdk/provider-utils';
-import { OllamaChatLanguageModel } from './ollama-chat-language-model';
+import { OllamaChatLanguageModel } from './models/ollama-chat-language-model';
 import { OllamaChatModelId, ollamaProviderOptions } from './ollama-chat-settings';
 import { OllamaCompletionLanguageModel } from './ollama-completion-language-model';
 import {
