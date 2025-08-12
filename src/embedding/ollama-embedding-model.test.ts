@@ -85,7 +85,7 @@ describe('doEmbed', () => {
     await model.doEmbed({ values: testValues });
 
     expect(await server.calls[0].requestBodyJson).toStrictEqual({
-      model: 'text-embedding-3-large',
+      model: 'dummy-embedding-model',
       input: testValues,
       encoding_format: 'float',
     });
@@ -94,9 +94,8 @@ describe('doEmbed', () => {
   it('should pass the dimensions setting', async () => {
     prepareJsonResponse();
 
-    await provider.embedding('text-embedding-3-large').doEmbed({
+    await provider.embedding('text-embedding-3-large', { dimensions: 64 }).doEmbed({
       values: testValues,
-      providerOptions: { openai: { dimensions: 64 } },
     });
 
     expect(await server.calls[0].requestBodyJson).toStrictEqual({
@@ -124,12 +123,9 @@ describe('doEmbed', () => {
     });
 
     expect(server.calls[0].requestHeaders).toStrictEqual({
-      authorization: 'Bearer test-api-key',
       'content-type': 'application/json',
       'custom-provider-header': 'provider-header-value',
       'custom-request-header': 'request-header-value',
-      'openai-organization': 'test-organization',
-      'openai-project': 'test-project',
     });
   });
 });

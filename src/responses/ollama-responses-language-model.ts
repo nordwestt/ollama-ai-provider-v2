@@ -216,7 +216,7 @@ export class OllamaResponsesLanguageModel implements LanguageModelV2 {
     for (const toolCall of response.message.tool_calls ?? []) {
       content.push({
         type: "tool-call" as const,
-        toolCallId: toolCall.id ?? generateId(),
+        toolCallId: toolCall.id ?? (this.config.generateId?.() ?? generateId()),
         toolName: toolCall.function.name,
         input: JSON.stringify(toolCall.function.arguments),
       });
@@ -392,7 +392,7 @@ export class OllamaResponsesLanguageModel implements LanguageModelV2 {
                   toolCall.function?.arguments != null &&
                   Object.keys(toolCall.function.arguments).length > 0
                 ) {
-                  const id = toolCall.id ?? generateId();
+                  const id = toolCall.id ?? (self.config.generateId?.() ?? generateId());
 
                   controller.enqueue({
                     type: "tool-input-start",
