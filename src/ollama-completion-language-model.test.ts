@@ -40,7 +40,6 @@ const TEST_LOGPROBS = {
 
 const provider = createOllama({
   apiKey: 'test-api-key',
-  compatibility: 'strict',
 });
 
 const model = provider.completion('gpt-3.5-turbo-instruct');

@@ -37,7 +37,6 @@ import { prepareTools } from "../ollama-prepare-tools";
 
 type OllamaChatConfig = {
   provider: string;
-  compatibility: "strict" | "compatible";
   headers: () => Record<string, string | undefined>;
   url: (options: { modelId: string; path: string }) => string;
   fetch?: FetchFunction;
@@ -486,25 +485,6 @@ export class OllamaChatLanguageModel implements LanguageModelV2 {
     };
   }
 }
-
-const ollamaTokenUsageSchema = z
-  .object({
-    prompt_tokens: z.number().nullish(),
-    completion_tokens: z.number().nullish(),
-    prompt_tokens_details: z
-      .object({
-        cached_tokens: z.number().nullish(),
-      })
-      .nullish(),
-    completion_tokens_details: z
-      .object({
-        reasoning_tokens: z.number().nullish(),
-        accepted_prediction_tokens: z.number().nullish(),
-        rejected_prediction_tokens: z.number().nullish(),
-      })
-      .nullish(),
-  })
-  .nullish();
 
 const baseOllamaResponseSchema = z.object({
   model: z.string(),

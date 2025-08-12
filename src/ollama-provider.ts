@@ -1,10 +1,7 @@
 import {
   EmbeddingModelV2,
-  ImageModelV2,
   LanguageModelV2,
   ProviderV2,
-  TranscriptionModelV2,
-  SpeechModelV2,
   NoSuchModelError,
 } from '@ai-sdk/provider';
 import {
@@ -127,9 +124,6 @@ export function createOllama(
   const baseURL =
     withoutTrailingSlash(options.baseURL) ?? 'http://127.0.0.1:11434/api';
 
-  // we default to compatible, because strict breaks providers like Groq:
-  const compatibility = options.compatibility ?? 'compatible';
-
   const providerName = options.name ?? 'ollama';
 
   const getHeaders = () => ({
@@ -143,7 +137,6 @@ export function createOllama(
       provider: `${providerName}.chat`,
       url: ({ path }) => `${baseURL}${path}`,
       headers: getHeaders,
-      compatibility,
       fetch: options.fetch,
     });
 
@@ -155,7 +148,6 @@ export function createOllama(
       provider: `${providerName}.completion`,
       url: ({ path }) => `${baseURL}${path}`,
       headers: getHeaders,
-      compatibility,
       fetch: options.fetch,
     });
 
@@ -212,8 +204,6 @@ export function createOllama(
 }
 
 /**
-Default Ollama provider instance. It uses 'strict' compatibility mode.
+Default Ollama provider instance.
  */
-export const ollama = createOllama({
-  compatibility: 'strict', // strict for Ollama API
-});
+export const ollama = createOllama();
