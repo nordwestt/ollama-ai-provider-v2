@@ -1,5 +1,5 @@
-import { EmbeddingModelV1Embedding } from '@ai-sdk/provider';
-import { JsonTestServer } from '@ai-sdk/provider-utils/test';
+import { EmbeddingModelV2Embedding } from '@ai-sdk/provider';
+import { createTestServer } from '@ai-sdk/provider-utils/test';
 import { createOllama } from '../ollama-provider';
 
 const dummyEmbeddings = [
@@ -12,7 +12,7 @@ const provider = createOllama({ apiKey: 'test-api-key' });
 const model = provider.embedding('text-embedding-3-large');
 
 describe('doEmbed', () => {
-  const server = new JsonTestServer('https://api.ollama.com/v1/embeddings');
+  const server = createTestServer('https://api.ollama.com/v1/embeddings');
 
   server.setupTestEnvironment();
 

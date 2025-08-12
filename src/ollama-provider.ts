@@ -5,6 +5,7 @@ import {
   ProviderV2,
   TranscriptionModelV2,
   SpeechModelV2,
+  NoSuchModelError,
 } from '@ai-sdk/provider';
 import {
   FetchFunction,
@@ -22,11 +23,6 @@ import {
   OllamaEmbeddingModelId,
   OllamaEmbeddingSettings,
 } from './ollama-embedding-settings';
-import { OllamaImageModel } from './ollama-image-model';
-import {
-  OllamaImageModelId,
-  OllamaImageSettings,
-} from './ollama-image-settings';
 import { OllamaResponsesModelId } from './ollama-responses-settings';
 import { OllamaResponsesLanguageModel } from './responses/ollama-responses-language-model';
 
@@ -80,21 +76,6 @@ Creates a model for text embeddings.
     settings?: OllamaEmbeddingSettings,
   ): EmbeddingModelV2<string>;
 
-  /**
-Creates a model for image generation.
-   */
-  image(
-    modelId: OllamaImageModelId,
-    settings?: OllamaImageSettings,
-  ): ImageModelV2;
-
-  /**
-Creates a model for image generation.
-   */
-  imageModel(
-    modelId: OllamaImageModelId,
-    settings?: OllamaImageSettings,
-  ): ImageModelV2;
 }
 
 export interface OllamaProviderSettings {
@@ -189,17 +170,6 @@ export function createOllama(
       fetch: options.fetch,
     });
 
-  const createImageModel = (
-    modelId: OllamaImageModelId,
-    settings: OllamaImageSettings = {},
-  ) =>
-    new OllamaImageModel(modelId, settings, {
-      provider: `${providerName}.image`,
-      url: ({ path }) => `${baseURL}${path}`,
-      headers: getHeaders,
-      fetch: options.fetch,
-    });
-
   const createLanguageModel = (
     modelId: OllamaResponsesModelId) => {
     if (new.target) {
@@ -230,9 +200,13 @@ export function createOllama(
   provider.embedding = createEmbeddingModel;
   provider.textEmbedding = createEmbeddingModel;
   provider.textEmbeddingModel = createEmbeddingModel;
-
-  provider.image = createImageModel;
-  provider.imageModel = createImageModel;
+  provider.imageModel = (modelId: string) => {
+    throw new NoSuchModelError({
+      modelId,
+      modelType: 'imageModel',
+      message: 'Image generation is unsupported with Ollama',
+    });
+  };
 
   return provider as OllamaProvider;
 }
