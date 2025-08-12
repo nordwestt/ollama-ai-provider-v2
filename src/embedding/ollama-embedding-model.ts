@@ -67,16 +67,13 @@ export class OllamaEmbeddingModel implements EmbeddingModelV2<string> {
       rawValue,
     } = await postJsonToApi({
       url: this.config.url({
-        path: "/embeddings",
+        path: "/embed",
         modelId: this.modelId,
       }),
       headers: combineHeaders(this.config.headers(), headers),
       body: {
         model: this.modelId,
         input: values,
-        encoding_format: "float",
-        dimensions: this.settings.dimensions,
-        user: this.settings.user,
       },
       failedResponseHandler: ollamaFailedResponseHandler,
       successfulResponseHandler: createJsonResponseHandler(
@@ -87,10 +84,7 @@ export class OllamaEmbeddingModel implements EmbeddingModelV2<string> {
     });
 
     return {
-      embeddings: response.data.map((item) => item.embedding),
-      usage: response.usage
-        ? { tokens: response.usage.prompt_tokens }
-        : undefined,
+      embeddings: response.embeddings.map((item) => item),
       response: { headers: responseHeaders, body: rawValue },
     };
   }
@@ -99,6 +93,9 @@ export class OllamaEmbeddingModel implements EmbeddingModelV2<string> {
 // minimal version of the schema, focussed on what is needed for the implementation
 // this approach limits breakages when the API changes and increases efficiency
 const ollamaTextEmbeddingResponseSchema = z.object({
-  data: z.array(z.object({ embedding: z.array(z.number()) })),
-  usage: z.object({ prompt_tokens: z.number() }).nullish(),
+  model: z.string(),
+  embeddings: z.array(z.array(z.number())),
+  total_duration: z.number(),
+  load_duration: z.number(),
+  prompt_eval_count: z.number(),
 });
