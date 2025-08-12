@@ -285,6 +285,10 @@ export class OllamaResponsesLanguageModel implements LanguageModelV2 {
     > = {};
     let hasToolCalls = false;
     let isFirstChunk = true;
+    let hasTextStarted = false;
+    let hasReasoningStarted = false;
+    let textEnded = false;
+    let reasoningEnded = false;
 
     return {
       stream: response.pipeThrough(
@@ -297,6 +301,9 @@ export class OllamaResponsesLanguageModel implements LanguageModelV2 {
           },
 
           transform(chunk, controller) {
+            if ((options as any)?.includeRawChunks) {
+              controller.enqueue({ type: "raw", rawValue: (chunk as any).rawValue });
+            }
             // Normalize chunk into one or more valid response objects (handles NDJSON edge cases)
             const values = extractOllamaResponseObjectsFromChunk(chunk);
 
@@ -334,10 +341,24 @@ export class OllamaResponsesLanguageModel implements LanguageModelV2 {
                   outputTokens: value.eval_count ?? undefined,
                   totalTokens: value.eval_count ?? undefined,
                 };
+
+                // Close any started streams at done
+                if (hasTextStarted && !textEnded) {
+                  controller.enqueue({ type: "text-end", id: "0" });
+                  textEnded = true;
+                }
+                if (hasReasoningStarted && !reasoningEnded) {
+                  controller.enqueue({ type: "reasoning-end", id: "0" });
+                  reasoningEnded = true;
+                }
               }
               const delta = value?.message;
 
               if (delta?.content != null) {
+                if (!hasTextStarted) {
+                  controller.enqueue({ type: "text-start", id: "0" });
+                  hasTextStarted = true;
+                }
                 controller.enqueue({
                   type: "text-delta",
                   id: "0",
@@ -346,6 +367,10 @@ export class OllamaResponsesLanguageModel implements LanguageModelV2 {
               }
 
               if (delta?.thinking) {
+                if (!hasReasoningStarted) {
+                  controller.enqueue({ type: "reasoning-start", id: "0" });
+                  hasReasoningStarted = true;
+                }
                 controller.enqueue({
                   type: "reasoning-delta",
                   id: "0",
@@ -366,7 +391,13 @@ export class OllamaResponsesLanguageModel implements LanguageModelV2 {
                   toolCall.function?.arguments != null &&
                   Object.keys(toolCall.function.arguments).length > 0
                 ) {
-                  const id = generateId();
+                  const id = toolCall.id ?? generateId();
+
+                  controller.enqueue({
+                    type: "tool-input-start",
+                    id: id,
+                    toolName: toolCall.function.name,
+                  });
 
                   controller.enqueue({
                     type: "tool-input-delta",
@@ -375,17 +406,30 @@ export class OllamaResponsesLanguageModel implements LanguageModelV2 {
                   });
 
                   controller.enqueue({
+                    type: "tool-input-end",
+                    id: id,
+                  });
+
+                  controller.enqueue({
                     type: "tool-call",
                     toolCallId: id,
                     toolName: toolCall.function.name,
                     input: JSON.stringify(toolCall.function.arguments),
                   });
+                  hasToolCalls = true;
                 }
               }
             }
           },
 
           flush(controller) {
+            // Ensure any started segments are properly closed
+            if (hasTextStarted && !textEnded) {
+              controller.enqueue({ type: "text-end", id: "0" });
+            }
+            if (hasReasoningStarted && !reasoningEnded) {
+              controller.enqueue({ type: "reasoning-end", id: "0" });
+            }
             controller.enqueue({
               type: "finish",
               finishReason,
