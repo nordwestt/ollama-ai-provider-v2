@@ -1,22 +1,22 @@
 import {
-  EmbeddingModelV1,
+  EmbeddingModelV2,
   TooManyEmbeddingValuesForCallError,
-} from '@ai-sdk/provider';
+} from "@ai-sdk/provider";
 import {
   combineHeaders,
   createJsonResponseHandler,
   postJsonToApi,
-} from '@ai-sdk/provider-utils';
-import { z } from 'zod';
-import { OllamaConfig } from './ollama-config';
+} from "@ai-sdk/provider-utils";
+import { z } from "zod/v4";
+import { OllamaConfig } from "../common/ollama-config";
 import {
   OllamaEmbeddingModelId,
   OllamaEmbeddingSettings,
-} from './ollama-embedding-settings';
-import { ollamaFailedResponseHandler } from './ollama-error';
+} from "./ollama-embedding-settings";
+import { ollamaFailedResponseHandler } from "../completion/ollama-error";
 
-export class OllamaEmbeddingModel implements EmbeddingModelV1<string> {
-  readonly specificationVersion = 'v1';
+export class OllamaEmbeddingModel implements EmbeddingModelV2<string> {
+  readonly specificationVersion = "v2";
   readonly modelId: OllamaEmbeddingModelId;
 
   private readonly config: OllamaConfig;
@@ -48,8 +48,9 @@ export class OllamaEmbeddingModel implements EmbeddingModelV1<string> {
     values,
     headers,
     abortSignal,
-  }: Parameters<EmbeddingModelV1<string>['doEmbed']>[0]): Promise<
-    Awaited<ReturnType<EmbeddingModelV1<string>['doEmbed']>>
+    providerOptions,
+  }: Parameters<EmbeddingModelV2<string>["doEmbed"]>[0]): Promise<
+    Awaited<ReturnType<EmbeddingModelV2<string>["doEmbed"]>>
   > {
     if (values.length > this.maxEmbeddingsPerCall) {
       throw new TooManyEmbeddingValuesForCallError({
@@ -60,16 +61,20 @@ export class OllamaEmbeddingModel implements EmbeddingModelV1<string> {
       });
     }
 
-    const { responseHeaders, value: response } = await postJsonToApi({
+    const {
+      responseHeaders,
+      value: response,
+      rawValue,
+    } = await postJsonToApi({
       url: this.config.url({
-        path: '/embeddings',
+        path: "/embeddings",
         modelId: this.modelId,
       }),
       headers: combineHeaders(this.config.headers(), headers),
       body: {
         model: this.modelId,
         input: values,
-        encoding_format: 'float',
+        encoding_format: "float",
         dimensions: this.settings.dimensions,
         user: this.settings.user,
       },
@@ -82,11 +87,11 @@ export class OllamaEmbeddingModel implements EmbeddingModelV1<string> {
     });
 
     return {
-      embeddings: response.data.map(item => item.embedding),
+      embeddings: response.data.map((item) => item.embedding),
       usage: response.usage
         ? { tokens: response.usage.prompt_tokens }
         : undefined,
-      rawResponse: { headers: responseHeaders },
+      response: { headers: responseHeaders, body: rawValue },
     };
   }
 }

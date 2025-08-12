@@ -1,6 +1,6 @@
 {
   "name": "ollama-ai-provider-v2",
-  "version": "0.0.9",
+  "version": "1.0.0",
   "license": "Apache-2.0",
   "sideEffects": false,
   "main": "./dist/index.js",
@@ -37,19 +37,19 @@
     }
   },
   "dependencies": {
-    "@ai-sdk/provider": "1.1.3",
-    "@ai-sdk/provider-utils": "2.2.8"
+    "@ai-sdk/provider": "2.0.0",
+    "@ai-sdk/provider-utils": "3.0.1"
   },
   "devDependencies": {
-    "@types/node": "^18",
+    "@types/node": "20.17.24",
     "@vercel/ai-tsconfig": "./tsconfig",
     "tsup": "^8",
-    "typescript": "5.6.3",
-    "vitest": "^3.2.4",
-    "zod": "3.23.8"
+    "typescript": "5.8.3",
+    "vitest": "^3.1.4",
+    "zod": "4.0.16"
   },
   "peerDependencies": {
-    "zod": "^3.0.0"
+    "zod": "^4.0.16"
   },
   "engines": {
     "node": ">=18"

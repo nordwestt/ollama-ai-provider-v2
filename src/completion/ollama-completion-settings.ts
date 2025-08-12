@@ -1,5 +1,5 @@
 // https://platform.ollama.com/docs/models
-export type OllamaCompletionModelId = 'gpt-3.5-turbo-instruct' | (string & {});
+export type OllamaCompletionModelId = (string & {});
 
 export interface OllamaCompletionSettings {
   /**

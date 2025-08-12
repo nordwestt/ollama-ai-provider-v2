@@ -1,57 +1,41 @@
 import {
-  EmbeddingModelV1,
-  ImageModelV1,
-  LanguageModelV1,
-  ProviderV1,
+  EmbeddingModelV2,
+  LanguageModelV2,
+  ProviderV2,
+  NoSuchModelError,
 } from '@ai-sdk/provider';
 import {
   FetchFunction,
   withoutTrailingSlash,
 } from '@ai-sdk/provider-utils';
-import { OllamaChatLanguageModel } from './ollama-chat-language-model';
-import { OllamaChatModelId, OllamaChatSettings } from './ollama-chat-settings';
-import { OllamaCompletionLanguageModel } from './ollama-completion-language-model';
+import { OllamaChatModelId, ollamaProviderOptions } from './ollama-chat-settings';
+import { OllamaCompletionLanguageModel } from './completion/ollama-completion-language-model';
 import {
   OllamaCompletionModelId,
   OllamaCompletionSettings,
-} from './ollama-completion-settings';
-import { OllamaEmbeddingModel } from './ollama-embedding-model';
+} from './completion/ollama-completion-settings';
+import { OllamaEmbeddingModel } from './embedding/ollama-embedding-model';
 import {
   OllamaEmbeddingModelId,
   OllamaEmbeddingSettings,
-} from './ollama-embedding-settings';
-import { OllamaImageModel } from './ollama-image-model';
-import {
-  OllamaImageModelId,
-  OllamaImageSettings,
-} from './ollama-image-settings';
+} from './embedding/ollama-embedding-settings';
+import { OllamaResponsesLanguageModel } from './responses/ollama-responses-language-model';
 
-export interface OllamaProvider extends ProviderV1 {
-  (
-    modelId: 'gpt-3.5-turbo-instruct',
-    settings?: OllamaCompletionSettings,
-  ): OllamaCompletionLanguageModel;
-  (modelId: OllamaChatModelId, settings?: OllamaChatSettings): LanguageModelV1;
+export interface OllamaProvider extends ProviderV2 {
+  (modelId: OllamaChatModelId): LanguageModelV2;
 
   /**
 Creates an Ollama model for text generation.
    */
-  languageModel(
-    modelId: 'gpt-3.5-turbo-instruct',
-    settings?: OllamaCompletionSettings,
-  ): OllamaCompletionLanguageModel;
-  languageModel(
-    modelId: OllamaChatModelId,
-    settings?: OllamaChatSettings,
-  ): LanguageModelV1;
+  languageModel(modelId: OllamaChatModelId): LanguageModelV2;
 
   /**
 Creates an Ollama chat model for text generation.
    */
   chat(
     modelId: OllamaChatModelId,
-    settings?: OllamaChatSettings,
-  ): LanguageModelV1;
+    settings?: typeof ollamaProviderOptions,
+  ): LanguageModelV2;
 
   /**
 Creates an Ollama completion model for text generation.
@@ -59,7 +43,7 @@ Creates an Ollama completion model for text generation.
   completion(
     modelId: OllamaCompletionModelId,
     settings?: OllamaCompletionSettings,
-  ): LanguageModelV1;
+  ): LanguageModelV2;
 
   /**
 Creates a model for text embeddings.
@@ -67,7 +51,7 @@ Creates a model for text embeddings.
   embedding(
     modelId: OllamaEmbeddingModelId,
     settings?: OllamaEmbeddingSettings,
-  ): EmbeddingModelV1<string>;
+  ): EmbeddingModelV2<string>;
 
   /**
 Creates a model for text embeddings.
@@ -77,7 +61,7 @@ Creates a model for text embeddings.
   textEmbedding(
     modelId: OllamaEmbeddingModelId,
     settings?: OllamaEmbeddingSettings,
-  ): EmbeddingModelV1<string>;
+  ): EmbeddingModelV2<string>;
 
   /**
 Creates a model for text embeddings.
@@ -85,23 +69,8 @@ Creates a model for text embeddings.
   textEmbeddingModel(
     modelId: OllamaEmbeddingModelId,
     settings?: OllamaEmbeddingSettings,
-  ): EmbeddingModelV1<string>;
+  ): EmbeddingModelV2<string>;
 
-  /**
-Creates a model for image generation.
-   */
-  image(
-    modelId: OllamaImageModelId,
-    settings?: OllamaImageSettings,
-  ): ImageModelV1;
-
-  /**
-Creates a model for image generation.
-   */
-  imageModel(
-    modelId: OllamaImageModelId,
-    settings?: OllamaImageSettings,
-  ): ImageModelV1;
 }
 
 export interface OllamaProviderSettings {
@@ -153,9 +122,6 @@ export function createOllama(
   const baseURL =
     withoutTrailingSlash(options.baseURL) ?? 'http://127.0.0.1:11434/api';
 
-  // we default to compatible, because strict breaks providers like Groq:
-  const compatibility = options.compatibility ?? 'compatible';
-
   const providerName = options.name ?? 'ollama';
 
   const getHeaders = () => ({
@@ -163,18 +129,6 @@ export function createOllama(
     'Ollama-Project': options.project,
     ...options.headers,
   });
-
-  const createChatModel = (
-    modelId: OllamaChatModelId,
-    settings: OllamaChatSettings = {},
-  ) =>
-    new OllamaChatLanguageModel(modelId, settings, {
-      provider: `${providerName}.chat`,
-      url: ({ path }) => `${baseURL}${path}`,
-      headers: getHeaders,
-      compatibility,
-      fetch: options.fetch,
-    });
 
   const createCompletionModel = (
     modelId: OllamaCompletionModelId,
@@ -184,7 +138,6 @@ export function createOllama(
       provider: `${providerName}.completion`,
       url: ({ path }) => `${baseURL}${path}`,
       headers: getHeaders,
-      compatibility,
       fetch: options.fetch,
     });
 
@@ -199,60 +152,48 @@ export function createOllama(
       fetch: options.fetch,
     });
 
-  const createImageModel = (
-    modelId: OllamaImageModelId,
-    settings: OllamaImageSettings = {},
-  ) =>
-    new OllamaImageModel(modelId, settings, {
-      provider: `${providerName}.image`,
-      url: ({ path }) => `${baseURL}${path}`,
-      headers: getHeaders,
-      fetch: options.fetch,
-    });
-
   const createLanguageModel = (
-    modelId: OllamaChatModelId | OllamaCompletionModelId,
-    settings?: OllamaChatSettings | OllamaCompletionSettings,
-  ) => {
+    modelId: OllamaChatModelId) => {
     if (new.target) {
       throw new Error(
         'The Ollama model function cannot be called with the new keyword.',
       );
     }
 
-    if (modelId === 'gpt-3.5-turbo-instruct') {
-      return createCompletionModel(
-        modelId,
-        settings as OllamaCompletionSettings,
-      );
-    }
-
-    return createChatModel(modelId, settings as OllamaChatSettings);
+    return createResponsesModel(modelId);
   };
 
-  const provider = function (
-    modelId: OllamaChatModelId | OllamaCompletionModelId,
-    settings?: OllamaChatSettings | OllamaCompletionSettings,
-  ) {
-    return createLanguageModel(modelId, settings);
+  const createResponsesModel = (modelId: OllamaChatModelId) => {
+    return new OllamaResponsesLanguageModel(modelId, {
+      provider: `${providerName}.responses`,
+      url: ({ path }) => `${baseURL}${path}`,
+      headers: getHeaders,
+      fetch: options.fetch,
+    });
+  };
+
+  const provider = function (modelId: OllamaChatModelId) {
+    return createLanguageModel(modelId);
   };
 
   provider.languageModel = createLanguageModel;
-  provider.chat = createChatModel;
+  provider.chat = createLanguageModel;
   provider.completion = createCompletionModel;
   provider.embedding = createEmbeddingModel;
   provider.textEmbedding = createEmbeddingModel;
   provider.textEmbeddingModel = createEmbeddingModel;
-
-  provider.image = createImageModel;
-  provider.imageModel = createImageModel;
+  provider.imageModel = (modelId: string) => {
+    throw new NoSuchModelError({
+      modelId,
+      modelType: 'imageModel',
+      message: 'Image generation is unsupported with Ollama',
+    });
+  };
 
   return provider as OllamaProvider;
 }
 
 /**
-Default Ollama provider instance. It uses 'strict' compatibility mode.
+Default Ollama provider instance.
  */
-export const ollama = createOllama({
-  compatibility: 'strict', // strict for Ollama API
-});
+export const ollama = createOllama();

@@ -1,15 +1,13 @@
 import {
-  LanguageModelV1Prompt,
-  UnsupportedFunctionalityError,
+  LanguageModelV2Prompt,
 } from '@ai-sdk/provider';
-import { convertUint8ArrayToBase64 } from '@ai-sdk/provider-utils';
 import { OllamaChatPrompt } from './ollama-chat-prompt';
 
 export function convertToOllamaChatMessages({
   prompt,
   systemMessageMode = 'system',
 }: {
-  prompt: LanguageModelV1Prompt;
+  prompt: LanguageModelV2Prompt;
   systemMessageMode?: 'system' | 'developer' | 'remove';
 }): OllamaChatPrompt {
   const messages: OllamaChatPrompt = [];
@@ -45,61 +43,11 @@ export function convertToOllamaChatMessages({
           break;
         }
 
+        const userText = content.filter((part) => part.type === 'text').map((part) => part.text).join('');
+
         messages.push({
           role: 'user',
-          content: content.map(part => {
-            switch (part.type) {
-              case 'text': {
-                return { type: 'text', text: part.text };
-              }
-              case 'image': {
-                return {
-                  type: 'image_url',
-                  image_url: {
-                    url:
-                      part.image instanceof URL
-                        ? part.image.toString()
-                        : `data:${
-                            part.mimeType ?? 'image/jpeg'
-                          };base64,${convertUint8ArrayToBase64(part.image)}`,
-
-                    // Ollama specific extension: image detail
-                    detail: part.providerMetadata?.ollama?.imageDetail,
-                  },
-                };
-              }
-              case 'file': {
-                if (part.data instanceof URL) {
-                  throw new UnsupportedFunctionalityError({
-                    functionality:
-                      "'File content parts with URL data' functionality not supported.",
-                  });
-                }
-
-                switch (part.mimeType) {
-                  case 'audio/wav': {
-                    return {
-                      type: 'input_audio',
-                      input_audio: { data: part.data, format: 'wav' },
-                    };
-                  }
-                  case 'audio/mp3':
-                  case 'audio/mpeg': {
-                    return {
-                      type: 'input_audio',
-                      input_audio: { data: part.data, format: 'mp3' },
-                    };
-                  }
-
-                  default: {
-                    throw new UnsupportedFunctionalityError({
-                      functionality: `File content part type ${part.mimeType} in user messages`,
-                    });
-                  }
-                }
-              }
-            }
-          }),
+          content: userText.length > 0 ? userText : [],
         });
 
         break;
@@ -126,7 +74,7 @@ export function convertToOllamaChatMessages({
                 type: 'function',
                 function: {
                   name: part.toolName,
-                  arguments: part.args as object,
+                  arguments: part.input as object,
                 },
               });
               break;
@@ -153,10 +101,25 @@ export function convertToOllamaChatMessages({
 
       case 'tool': {
         for (const toolResponse of content) {
+          const output = toolResponse.output;
+
+          let contentValue: string;
+          switch (output.type) {
+            case 'text':
+            case 'error-text':
+              contentValue = output.value;
+              break;
+            case 'content':
+            case 'json':
+            case 'error-json':
+              contentValue = JSON.stringify(output.value);
+              break;
+          }
+
           messages.push({
             role: 'tool',
             tool_call_id: toolResponse.toolCallId,
-            content: JSON.stringify(toolResponse.result),
+            content: contentValue,
           });
         }
         break;
