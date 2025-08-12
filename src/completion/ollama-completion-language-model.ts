@@ -17,18 +17,17 @@ import {
   postJsonToApi,
 } from "@ai-sdk/provider-utils";
 import { z } from "zod/v4";
-import { convertToOllamaCompletionPrompt } from "./adaptors/convert-to-ollama-completion-prompt";
-import { mapOllamaFinishReason } from "./adaptors/map-ollama-finish-reason";
+import { convertToOllamaCompletionPrompt } from "../adaptors/convert-to-ollama-completion-prompt";
+import { mapOllamaFinishReason } from "../adaptors/map-ollama-finish-reason";
 import {
   OllamaCompletionModelId,
   OllamaCompletionSettings,
 } from "./ollama-completion-settings";
 import {
-  ollamaErrorDataSchema,
   ollamaFailedResponseHandler,
 } from "./ollama-error";
-import { getResponseMetadata } from "./get-response-metadata";
-import { ollamaProviderOptions } from "./ollama-chat-settings";
+import { getResponseMetadata } from "../common/get-response-metadata";
+import { ollamaProviderOptions } from "../ollama-chat-settings";
 
 type OllamaCompletionConfig = {
   provider: string;

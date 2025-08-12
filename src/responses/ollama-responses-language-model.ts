@@ -18,23 +18,23 @@ import {
   postJsonToApi,
 } from "@ai-sdk/provider-utils";
 import { z } from "zod/v4";
-import { OllamaConfig } from "../ollama-config";
-import { ollamaFailedResponseHandler } from "../ollama-error";
+import { OllamaConfig } from "../common/ollama-config";
+import { ollamaFailedResponseHandler } from "../completion/ollama-error";
 import { convertToOllamaResponsesMessages } from "./convert-to-ollama-responses-messages";
 import { prepareResponsesTools } from "./ollama-responses-prepare-tools";
-import { OllamaResponsesModelId } from "../ollama-responses-settings";
+import { OllamaChatModelId } from "../ollama-chat-settings";
 import { convertToOllamaChatMessages } from "../adaptors/convert-to-ollama-chat-messages";
-import { getResponseMetadata } from "../get-response-metadata";
+import { getResponseMetadata } from "../common/get-response-metadata";
 import { mapOllamaFinishReason } from "../adaptors/map-ollama-finish-reason";
 
 export class OllamaResponsesLanguageModel implements LanguageModelV2 {
   readonly specificationVersion = "v2";
 
-  readonly modelId: OllamaResponsesModelId;
+  readonly modelId: OllamaChatModelId;
 
   private readonly config: OllamaConfig;
 
-  constructor(modelId: OllamaResponsesModelId, config: OllamaConfig) {
+  constructor(modelId: OllamaChatModelId, config: OllamaConfig) {
     this.modelId = modelId;
     this.config = config;
   }

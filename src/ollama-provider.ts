@@ -9,17 +9,16 @@ import {
   withoutTrailingSlash,
 } from '@ai-sdk/provider-utils';
 import { OllamaChatModelId, ollamaProviderOptions } from './ollama-chat-settings';
-import { OllamaCompletionLanguageModel } from './ollama-completion-language-model';
+import { OllamaCompletionLanguageModel } from './completion/ollama-completion-language-model';
 import {
   OllamaCompletionModelId,
   OllamaCompletionSettings,
-} from './ollama-completion-settings';
+} from './completion/ollama-completion-settings';
 import { OllamaEmbeddingModel } from './embedding/ollama-embedding-model';
 import {
   OllamaEmbeddingModelId,
   OllamaEmbeddingSettings,
 } from './embedding/ollama-embedding-settings';
-import { OllamaResponsesModelId } from './ollama-responses-settings';
 import { OllamaResponsesLanguageModel } from './responses/ollama-responses-language-model';
 
 export interface OllamaProvider extends ProviderV2 {
@@ -28,7 +27,7 @@ export interface OllamaProvider extends ProviderV2 {
   /**
 Creates an Ollama model for text generation.
    */
-  languageModel(modelId: OllamaResponsesModelId): LanguageModelV2;
+  languageModel(modelId: OllamaChatModelId): LanguageModelV2;
 
   /**
 Creates an Ollama chat model for text generation.
@@ -154,7 +153,7 @@ export function createOllama(
     });
 
   const createLanguageModel = (
-    modelId: OllamaResponsesModelId) => {
+    modelId: OllamaChatModelId) => {
     if (new.target) {
       throw new Error(
         'The Ollama model function cannot be called with the new keyword.',
@@ -164,7 +163,7 @@ export function createOllama(
     return createResponsesModel(modelId);
   };
 
-  const createResponsesModel = (modelId: OllamaResponsesModelId) => {
+  const createResponsesModel = (modelId: OllamaChatModelId) => {
     return new OllamaResponsesLanguageModel(modelId, {
       provider: `${providerName}.responses`,
       url: ({ path }) => `${baseURL}${path}`,
@@ -173,7 +172,7 @@ export function createOllama(
     });
   };
 
-  const provider = function (modelId: OllamaResponsesModelId) {
+  const provider = function (modelId: OllamaChatModelId) {
     return createLanguageModel(modelId);
   };
 

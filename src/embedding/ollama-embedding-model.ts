@@ -8,12 +8,12 @@ import {
   postJsonToApi,
 } from "@ai-sdk/provider-utils";
 import { z } from "zod/v4";
-import { OllamaConfig } from "../ollama-config";
+import { OllamaConfig } from "../common/ollama-config";
 import {
   OllamaEmbeddingModelId,
   OllamaEmbeddingSettings,
 } from "./ollama-embedding-settings";
-import { ollamaFailedResponseHandler } from "../ollama-error";
+import { ollamaFailedResponseHandler } from "../completion/ollama-error";
 
 export class OllamaEmbeddingModel implements EmbeddingModelV2<string> {
   readonly specificationVersion = "v2";
