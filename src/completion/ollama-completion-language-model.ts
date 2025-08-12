@@ -1,4 +1,15 @@
 import {
+  combineHeaders,
+  createJsonResponseHandler,
+  createJsonStreamResponseHandler,
+  generateId,
+  parseProviderOptions,
+  ParseResult,
+  postJsonToApi,
+} from "@ai-sdk/provider-utils";
+import { z } from "zod/v4";
+import {
+  InvalidPromptError,
   LanguageModelV2,
   LanguageModelV2CallWarning,
   LanguageModelV2Content,
@@ -7,45 +18,35 @@ import {
   LanguageModelV2Usage,
   SharedV2ProviderMetadata,
 } from "@ai-sdk/provider";
-import {
-  FetchFunction,
-  ParseResult,
-  combineHeaders,
-  createEventSourceResponseHandler,
-  createJsonResponseHandler,
-  parseProviderOptions,
-  postJsonToApi,
-} from "@ai-sdk/provider-utils";
-import { z } from "zod/v4";
+import { OllamaConfig } from "../common/ollama-config";
+import { ollamaFailedResponseHandler } from "./ollama-error";
 import { convertToOllamaCompletionPrompt } from "../adaptors/convert-to-ollama-completion-prompt";
+import { OllamaCompletionModelId, OllamaCompletionSettings } from "./ollama-completion-settings";
 import { mapOllamaFinishReason } from "../adaptors/map-ollama-finish-reason";
-import {
-  OllamaCompletionModelId,
-  OllamaCompletionSettings,
-} from "./ollama-completion-settings";
-import {
-  ollamaFailedResponseHandler,
-} from "./ollama-error";
 import { getResponseMetadata } from "../common/get-response-metadata";
-import { ollamaProviderOptions } from "../ollama-chat-settings";
+
+// Completion-specific provider options schema
+const ollamaCompletionProviderOptions = z.object({
+  think: z.boolean().optional(),
+  user: z.string().optional(),
+  suffix: z.string().optional(),
+  echo: z.boolean().optional(),
+});
 
 type OllamaCompletionConfig = {
   provider: string;
+  url: (options: { path: string; modelId: string }) => string;
   headers: () => Record<string, string | undefined>;
-  url: (options: { modelId: string; path: string }) => string;
-  fetch?: FetchFunction;
+  fetch?: typeof fetch;
 };
 
 export class OllamaCompletionLanguageModel implements LanguageModelV2 {
   readonly specificationVersion = "v2";
+
   readonly modelId: OllamaCompletionModelId;
-  readonly settings?: OllamaCompletionSettings;
+  readonly settings: OllamaCompletionSettings;
 
   private readonly config: OllamaCompletionConfig;
-
-  private get providerOptionsName(): string {
-    return this.config.provider.split(".")[0].trim();
-  }
 
   constructor(
     modelId: OllamaCompletionModelId,
@@ -87,7 +88,7 @@ export class OllamaCompletionLanguageModel implements LanguageModelV2 {
       (await parseProviderOptions({
         provider: "ollama",
         providerOptions,
-        schema: ollamaProviderOptions,
+        schema: ollamaCompletionProviderOptions,
       })) ?? {};
 
     if (topK != null) {
@@ -123,15 +124,9 @@ export class OllamaCompletionLanguageModel implements LanguageModelV2 {
         // model id:
         model: this.modelId,
 
-        // model specific settings:
-        logit_bias: ollamaOptions.logitBias,
-        logprobs:
-          ollamaOptions?.logprobs === true
-            ? 0
-            : ollamaOptions?.logprobs === false
-              ? undefined
-              : ollamaOptions?.logprobs,
+        // Ollama-supported settings:
         user: ollamaOptions.user,
+        think: ollamaOptions.think,
 
         // standardized settings:
         max_tokens: maxOutputTokens,
@@ -139,14 +134,15 @@ export class OllamaCompletionLanguageModel implements LanguageModelV2 {
         top_p: topP,
         frequency_penalty: frequencyPenalty,
         presence_penalty: presencePenalty,
-        seed,
-        think: providerOptions?.ollama?.think ?? this.settings?.think,
+        stop,
 
         // prompt:
         prompt: completionPrompt,
 
-        // stop sequences:
-        stop: stop.length > 0 ? stop : undefined,
+        // other settings:
+        suffix: ollamaOptions.suffix,
+        echo: ollamaOptions.echo,
+        stream: false, // always disabled for doGenerate
       },
       warnings,
     };
@@ -190,7 +186,7 @@ export class OllamaCompletionLanguageModel implements LanguageModelV2 {
       usage: {
         inputTokens: response.prompt_eval_count ?? undefined,
         outputTokens: response.eval_count ?? undefined,
-        totalTokens: response.eval_count ?? undefined,
+        totalTokens: (response.prompt_eval_count ?? 0) + (response.eval_count ?? 0),
       },
       finishReason: mapOllamaFinishReason("stop"),
       request: { body: JSON.stringify(body) },
@@ -222,7 +218,7 @@ export class OllamaCompletionLanguageModel implements LanguageModelV2 {
       headers: combineHeaders(this.config.headers(), options.headers),
       body,
       failedResponseHandler: ollamaFailedResponseHandler,
-      successfulResponseHandler: createEventSourceResponseHandler(
+      successfulResponseHandler: createJsonStreamResponseHandler(
         baseOllamaResponseSchema,
       ),
       abortSignal: options.abortSignal,

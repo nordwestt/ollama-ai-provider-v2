@@ -63,7 +63,6 @@ export class OllamaResponsesLanguageModel implements LanguageModelV2 {
     responseFormat,
   }: Parameters<LanguageModelV2["doGenerate"]>[0]) {
     const warnings: LanguageModelV2CallWarning[] = [];
-    const modelConfig = getResponsesModelConfig(this.modelId);
 
     if (topK != null) {
       warnings.push({ type: "unsupported-setting", setting: "topK" });
@@ -94,7 +93,7 @@ export class OllamaResponsesLanguageModel implements LanguageModelV2 {
     const { messages, warnings: messageWarnings } =
       convertToOllamaResponsesMessages({
         prompt,
-        systemMessageMode: modelConfig.systemMessageMode,
+        systemMessageMode: "system", // Ollama uses standard system messages
       });
 
     warnings.push(...messageWarnings);
@@ -115,46 +114,12 @@ export class OllamaResponsesLanguageModel implements LanguageModelV2 {
       max_output_tokens: maxOutputTokens,
 
       ...(responseFormat?.type === "json" && {
-        text: {
-          format:
-            responseFormat.schema != null
-              ? {
-                  type: "json_schema",
-                  strict: strictJsonSchema,
-                  name: responseFormat.name ?? "response",
-                  description: responseFormat.description,
-                  schema: responseFormat.schema,
-                }
-              : { type: "json_object" },
-        },
+        format: responseFormat.schema != null ? responseFormat.schema : "json",
       }),
 
-      // provider options:
-      metadata: ollamaOptions?.metadata,
-      parallel_tool_calls: ollamaOptions?.parallelToolCalls,
-      previous_response_id: ollamaOptions?.previousResponseId,
-      store: ollamaOptions?.store,
+      // Ollama-supported provider options:
       user: ollamaOptions?.user,
       think: ollamaOptions?.think ?? false,
-      instructions: ollamaOptions?.instructions,
-      service_tier: ollamaOptions?.serviceTier,
-
-      // model-specific settings:
-      ...(modelConfig.isReasoningModel &&
-        (ollamaOptions?.reasoningEffort != null ||
-          ollamaOptions?.reasoningSummary != null) && {
-          reasoning: {
-            ...(ollamaOptions?.reasoningEffort != null && {
-              effort: ollamaOptions.reasoningEffort,
-            }),
-            ...(ollamaOptions?.reasoningSummary != null && {
-              summary: ollamaOptions.reasoningSummary,
-            }),
-          },
-        }),
-      ...(modelConfig.requiredAutoTruncation && {
-        truncation: "auto",
-      }),
     };
     
     const {
@@ -167,7 +132,6 @@ export class OllamaResponsesLanguageModel implements LanguageModelV2 {
       strictJsonSchema,
     });
 
-    console.log("Ollama tools:", ollamaTools);
     return {
       args: {
         ...baseArgs,
@@ -231,8 +195,8 @@ export class OllamaResponsesLanguageModel implements LanguageModelV2 {
       usage: {
         inputTokens: response.prompt_eval_count ?? undefined,
         outputTokens: response.eval_count ?? undefined,
-        totalTokens: response.eval_count ?? undefined,
-        reasoningTokens: response.eval_count ?? undefined,
+        totalTokens: (response.prompt_eval_count ?? 0) + (response.eval_count ?? 0),
+        reasoningTokens: undefined, // Ollama doesn't provide separate reasoning tokens
         cachedInputTokens: undefined,
       },
       request: { body: JSON.stringify(body) },
@@ -340,7 +304,7 @@ export class OllamaResponsesLanguageModel implements LanguageModelV2 {
                 usage = {
                   inputTokens: value.prompt_eval_count || 0,
                   outputTokens: value.eval_count ?? undefined,
-                  totalTokens: value.eval_count ?? undefined,
+                  totalTokens: (value.prompt_eval_count ?? 0) + (value.eval_count ?? 0),
                 };
 
                 // Close any started streams at done
@@ -517,54 +481,12 @@ function extractOllamaResponseObjectsFromChunk(
   return results;
 }
 
-type ResponsesModelConfig = {
-  isReasoningModel: boolean;
-  systemMessageMode: "remove" | "system" | "developer";
-  requiredAutoTruncation: boolean;
-};
-
-function getResponsesModelConfig(modelId: string): ResponsesModelConfig {
-  // o series reasoning models:
-  if (modelId.startsWith("o")) {
-    if (modelId.startsWith("o1-mini") || modelId.startsWith("o1-preview")) {
-      return {
-        isReasoningModel: true,
-        systemMessageMode: "remove",
-        requiredAutoTruncation: false,
-      };
-    }
-
-    return {
-      isReasoningModel: true,
-      systemMessageMode: "developer",
-      requiredAutoTruncation: false,
-    };
-  }
-
-  // gpt models:
-  return {
-    isReasoningModel: false,
-    systemMessageMode: "system",
-    requiredAutoTruncation: false,
-  };
-}
-
-function supportsFlexProcessing(modelId: string): boolean {
-  return modelId.startsWith("o3") || modelId.startsWith("o4-mini");
-}
-
 const ollamaResponsesProviderOptionsSchema = z.object({
-  metadata: z.any().nullish(),
-  parallelToolCalls: z.boolean().nullish(),
-  previousResponseId: z.string().nullish(),
-  store: z.boolean().nullish(),
+  // Ollama-specific options that are actually supported
   user: z.string().nullish(),
-  reasoningEffort: z.string().nullish(),
-  strictJsonSchema: z.boolean().nullish(),
-  instructions: z.string().nullish(),
-  reasoningSummary: z.string().nullish(),
-  serviceTier: z.enum(["auto", "flex"]).nullish(),
   think: z.boolean().nullish(),
+  parallelToolCalls: z.boolean().nullish(),
+  strictJsonSchema: z.boolean().nullish(),
 });
 
 export type OllamaResponsesProviderOptions = z.infer<

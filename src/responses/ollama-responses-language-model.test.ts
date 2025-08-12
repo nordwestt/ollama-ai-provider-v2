@@ -107,8 +107,8 @@ describe('OllamaResponsesLanguageModel', () => {
       expect(result.usage).toEqual({
         inputTokens: 10,
         outputTokens: 20,
-        totalTokens: 20,
-        reasoningTokens: 20,
+        totalTokens: 30, // inputTokens + outputTokens
+        reasoningTokens: undefined, // Ollama doesn't provide separate reasoning tokens
         cachedInputTokens: undefined,
       });
     });
@@ -237,24 +237,6 @@ describe('OllamaResponsesLanguageModel', () => {
             user: 'test-user',
             metadata: { session: 'test' },
             think: true,
-          },
-        },
-      });
-
-      expect(result.warnings).toEqual([]);
-    });
-
-    it('should handle reasoning models configuration', async () => {
-      const reasoningModel = new OllamaResponsesLanguageModel('o1-preview', testConfig);
-      
-      prepareJsonResponse();
-
-      const result = await reasoningModel.doGenerate({
-        prompt: TEST_PROMPT,
-        providerOptions: {
-          ollama: {
-            reasoningEffort: 'high',
-            reasoningSummary: 'enabled',
           },
         },
       });
