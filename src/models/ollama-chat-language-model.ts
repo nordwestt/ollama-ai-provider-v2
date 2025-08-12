@@ -23,7 +23,6 @@ import {
 } from "@ai-sdk/provider-utils";
 import { z } from "zod/v4";
 import { convertToOllamaChatMessages } from "../convert-to-ollama-chat-messages";
-import { mapOllamaChatLogProbsOutput } from "../map-ollama-chat-logprobs";
 import { mapOllamaFinishReason } from "../map-ollama-finish-reason";
 import {
   OllamaChatModelId,
