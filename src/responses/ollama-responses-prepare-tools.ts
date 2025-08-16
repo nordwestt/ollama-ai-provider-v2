@@ -38,17 +38,42 @@ export function prepareResponsesTools({
 
   for (const tool of tools) {
     switch (tool.type) {
-      case "function":
+      case "function": {
+        // Ensure parameters is always a non-null object (even if empty)
+        let parameters = tool.inputSchema;
+        if(!parameters){
+          parameters = {
+            type: "object",
+            properties: {},
+            required: [],
+          };
+        }
+        else if (
+          parameters &&
+          typeof parameters === "object" &&
+          parameters.type === "object" &&
+          parameters.properties &&
+          Object.keys(parameters.properties).length === 0
+        ) {
+          // Defensive: ensure required/optional fields are handled for empty schemas
+          parameters = {
+            ...parameters,
+            properties: {},
+            required: [],
+          };
+        } 
+        
         ollamaTools.push({
           type: "function",
           function: {
             name: tool.name,
             description: tool.description,
-            parameters: tool.inputSchema,
+            parameters,
             strict: strictJsonSchema,
           },
         });
         break;
+      }
       default:
         toolWarnings.push({ type: "unsupported-tool", tool });
         break;
