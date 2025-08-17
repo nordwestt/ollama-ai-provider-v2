@@ -207,8 +207,7 @@ export class OllamaStreamProcessor {
 
       if (
         toolCall.function?.name != null &&
-        toolCall.function?.arguments != null &&
-        Object.keys(toolCall.function.arguments).length > 0
+        toolCall.function?.arguments != null
       ) {
         this.emitToolCall(toolCall, controller);
       }
