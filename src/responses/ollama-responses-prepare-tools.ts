@@ -8,11 +8,9 @@ import { OllamaResponsesTool } from "./ollama-responses-api-types";
 export function prepareResponsesTools({
   tools,
   toolChoice,
-  strictJsonSchema,
 }: {
   tools: LanguageModelV2CallOptions["tools"];
   toolChoice?: LanguageModelV2CallOptions["toolChoice"];
-  strictJsonSchema: boolean;
 }): {
   tools?: Array<OllamaResponsesTool>;
   toolChoice?:
@@ -69,7 +67,6 @@ export function prepareResponsesTools({
             name: tool.name,
             description: tool.description,
             parameters,
-            strict: strictJsonSchema,
           },
         });
         break;

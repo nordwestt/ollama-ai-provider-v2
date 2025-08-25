@@ -221,23 +221,7 @@ export const ollamaProviderOptions = z.object({
    */
   think: z.boolean().optional(),
 
-  /**
-   * Whether to enable parallel function calling during tool use. Default to true.
-   */
-  parallelToolCalls: z.boolean().optional(),
 
-  /**
-   * A unique identifier representing your end-user, which can help Ollama to
-   * monitor and detect abuse.
-   */
-  user: z.string().optional(),
-
-  /**
-   * Whether to use strict JSON schema validation.
-   *
-   * @default true
-   */
-  strictJsonSchema: z.boolean().optional(),
 });
 
 export type OllamaProviderOptions = z.infer<typeof ollamaProviderOptions>;

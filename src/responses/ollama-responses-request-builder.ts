@@ -12,8 +12,6 @@ import { OllamaChatModelId } from "../ollama-chat-settings";
 const ollamaResponsesProviderOptionsSchema = z.object({
   user: z.string().nullish(),
   think: z.boolean().nullish(),
-  parallelToolCalls: z.boolean().nullish(),
-  strictJsonSchema: z.boolean().nullish(),
 });
 
 export type OllamaResponsesProviderOptions = z.infer<
@@ -87,7 +85,6 @@ export class OllamaRequestBuilder {
     warnings.push(...messageWarnings);
 
     const ollamaOptions = await this.parseProviderOptions(providerOptions);
-    const strictJsonSchema = ollamaOptions?.strictJsonSchema ?? false;
 
     const baseArgs = this.buildBaseArgs({
       modelId,
@@ -103,7 +100,6 @@ export class OllamaRequestBuilder {
       prepareResponsesTools({
         tools,
         toolChoice,
-        strictJsonSchema,
       });
 
     return {

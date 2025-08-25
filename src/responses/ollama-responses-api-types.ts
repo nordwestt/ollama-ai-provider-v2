@@ -66,7 +66,6 @@ export type OllamaResponsesTool =
         name: string;
         description: string | undefined;
         parameters: JSONSchema7;
-        strict: boolean | undefined;
       };
     }
   | {
