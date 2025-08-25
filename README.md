@@ -52,6 +52,19 @@ const { text } = await generateText({
 });
 ```
 
+## Example using a fixed seed - where you always get the same response for the same question
+
+```ts
+import { ollama } from 'ollama-ai-provider-v2';
+import { generateText } from 'ai';
+
+const { text } = await generateText({
+  model: ollama('llama3.2'),
+  providerOptions: { ollama: { options: {seed: 123} } },
+  prompt: 'Write a meaty lasagna recipe for 4 people',
+});
+```
+
 
 ## Documentation
 
