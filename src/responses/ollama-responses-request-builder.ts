@@ -7,15 +7,11 @@ import { z } from "zod/v4";
 import { convertToOllamaResponsesMessages } from "./convert-to-ollama-responses-messages";
 import { convertToOllamaChatMessages } from "../adaptors/convert-to-ollama-chat-messages";
 import { prepareResponsesTools } from "./ollama-responses-prepare-tools";
-import { OllamaChatModelId } from "../ollama-chat-settings";
+import { OllamaChatModelId, ollamaProviderOptions } from "../ollama-chat-settings";
 
-const ollamaResponsesProviderOptionsSchema = z.object({
-  user: z.string().nullish(),
-  think: z.boolean().nullish(),
-});
 
 export type OllamaResponsesProviderOptions = z.infer<
-  typeof ollamaResponsesProviderOptionsSchema
+  typeof ollamaProviderOptions
 >;
 
 interface RequestBuilderOptions {
@@ -148,7 +144,7 @@ export class OllamaRequestBuilder {
     const result = await parseProviderOptions({
       provider: "ollama",
       providerOptions,
-      schema: ollamaResponsesProviderOptionsSchema,
+      schema: ollamaProviderOptions,
     });
     return result ?? null;
   }
@@ -184,8 +180,8 @@ export class OllamaRequestBuilder {
         format: responseFormat.schema != null ? responseFormat.schema : "json",
       }),
 
-      user: ollamaOptions?.user ?? undefined,
       think: ollamaOptions?.think ?? false,
+      options: ollamaOptions?.options?? undefined
     };
   }
 } 

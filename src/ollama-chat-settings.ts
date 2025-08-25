@@ -220,6 +220,18 @@ export const ollamaProviderOptions = z.object({
    * Only supported by certain models like DeepSeek R1 and Qwen 3.
    */
   think: z.boolean().optional(),
+  options: z.object({
+    num_ctx: z.number().optional(),
+    repeat_last_n: z.number().optional(),
+    repeat_penalty: z.number().optional(),
+    temperature: z.number().optional(),
+    seed: z.number().optional(),
+    stop: z.array(z.string()).optional(),
+    num_predict: z.number().optional(),
+    top_k: z.number().optional(),
+    top_p: z.number().optional(),
+    min_p: z.number().optional(),
+  }).optional()
 
 
 });
