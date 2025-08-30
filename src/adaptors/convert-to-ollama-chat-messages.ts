@@ -1,4 +1,5 @@
 import {
+  LanguageModelV2FilePart,
   LanguageModelV2Prompt,
 } from '@ai-sdk/provider';
 import { OllamaChatPrompt } from './ollama-chat-prompt';
@@ -44,10 +45,14 @@ export function convertToOllamaChatMessages({
         }
 
         const userText = content.filter((part) => part.type === 'text').map((part) => part.text).join('');
+        const images = content
+          .filter((part) => part.type === 'file' && part.mediaType.startsWith('image/'))
+          .map((part) => (part as LanguageModelV2FilePart).data);
 
         messages.push({
           role: 'user',
           content: userText.length > 0 ? userText : [],
+          images: images.length > 0 ? images : undefined
         });
 
         break;
@@ -82,13 +87,13 @@ export function convertToOllamaChatMessages({
             case 'reasoning': {
               thinking += part.text;
               break;
-            } 
+            }
             default: {
               throw new Error(`Unsupported part: ${part}`);
             }
           }
         }
-        
+
         messages.push({
           role: 'assistant',
           content: text,
