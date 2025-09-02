@@ -69,3 +69,21 @@ const { text } = await generateText({
 ## Documentation
 
 Please check out the **[Ollama provider documentation](https://github.com/nordwestt/ollama-ai-provider-v2)** for more information.
+
+## How to contribute
+
+### Step 1. Fork the repository
+### Step 2. Make the changes to the code
+### Step 3. Build and test for yourself
+
+Run following commands to install dependencies and build the project:
+```
+npm run install
+npm run build
+```
+
+This produces the built files in the `dist` folder. 
+Simply copy these files over to your project at `yourproject/node_modules/ollama-ai-provider-v2/dist`.
+Now you can test the changes in your project and verify that they work as expected. 
+
+### Step 4. Open a PR to this project with your forked branch
