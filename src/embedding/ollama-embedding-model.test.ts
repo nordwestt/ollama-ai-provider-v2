@@ -12,31 +12,28 @@ const provider = createOllama();
 const model = provider.embedding('dummy-embedding-model');
 
 const server = createTestServer({
-  'http://127.0.0.1:11434/api/embeddings': {},
+  'http://127.0.0.1:11434/api/embed': {},
 });
 
 describe('doEmbed', () => {
   function prepareJsonResponse({
     embeddings = dummyEmbeddings,
-    usage = { prompt_tokens: 8, total_tokens: 8 },
+    usage = { prompt_eval_count: 8 },
     headers,
   }: {
     embeddings?: EmbeddingModelV2Embedding[];
-    usage?: { prompt_tokens: number; total_tokens: number };
+    usage?: { prompt_eval_count: number };
     headers?: Record<string, string>;
   } = {}) {
-    server.urls['http://127.0.0.1:11434/api/embeddings'].response = {
+    server.urls['http://127.0.0.1:11434/api/embed'].response = {
       type: 'json-value',
       headers,
       body: {
-        object: 'list',
-        data: embeddings.map((embedding, i) => ({
-          object: 'embedding',
-          index: i,
-          embedding,
-        })),
-        model: 'text-embedding-3-large',
-        usage,
+        model: 'dummy-embedding-model',
+        embeddings,
+        total_duration: 14143917,
+        load_duration: 1019500,
+        prompt_eval_count: usage.prompt_eval_count,
       },
     };
   }
@@ -60,7 +57,7 @@ describe('doEmbed', () => {
 
     expect(response?.headers).toStrictEqual({
       // default headers:
-      'content-length': '236',
+      'content-length': '162',
       'content-type': 'application/json',
 
       // custom header
@@ -71,7 +68,7 @@ describe('doEmbed', () => {
 
   it('should extract usage', async () => {
     prepareJsonResponse({
-      usage: { prompt_tokens: 20, total_tokens: 20 },
+      usage: { prompt_eval_count: 20 },
     });
 
     const { usage } = await model.doEmbed({ values: testValues });
@@ -87,7 +84,6 @@ describe('doEmbed', () => {
     expect(await server.calls[0].requestBodyJson).toStrictEqual({
       model: 'dummy-embedding-model',
       input: testValues,
-      encoding_format: 'float',
     });
   });
 
@@ -101,8 +97,6 @@ describe('doEmbed', () => {
     expect(await server.calls[0].requestBodyJson).toStrictEqual({
       model: 'text-embedding-3-large',
       input: testValues,
-      encoding_format: 'float',
-      dimensions: 64,
     });
   });
 

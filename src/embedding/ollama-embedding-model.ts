@@ -85,6 +85,7 @@ export class OllamaEmbeddingModel implements EmbeddingModelV2<string> {
 
     return {
       embeddings: response.embeddings.map((item) => item),
+      usage: { tokens: response.prompt_eval_count },
       response: { headers: responseHeaders, body: rawValue },
     };
   }

@@ -41,6 +41,7 @@
     "@ai-sdk/provider-utils": "3.0.1"
   },
   "devDependencies": {
+    "@edge-runtime/vm": "^5.0.0",
     "@types/node": "20.17.24",
     "@vercel/ai-tsconfig": "./tsconfig",
     "tsup": "^8",

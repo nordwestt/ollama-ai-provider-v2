@@ -37,9 +37,8 @@ export class OllamaResponsesLanguageModel implements LanguageModelV2 {
   }
 
   readonly supportedUrls: Record<string, RegExp[]> = {
-     image: [
-      /^https?:\/\/.*\.(jpg|jpeg|png|gif|webp|bmp|svg)(\?.*)?$/i,
-      /^data:image\/[^;]+;base64,/i,
+    'image/*': [
+      /^https?:\/\/.*$/
     ]
   };
 

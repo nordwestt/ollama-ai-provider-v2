@@ -15,6 +15,9 @@ importers:
         specifier: 3.0.1
         version: 3.0.1(zod@4.0.16)
     devDependencies:
+      '@edge-runtime/vm':
+        specifier: ^5.0.0
+        version: 5.0.0
       '@types/node':
         specifier: 20.17.24
         version: 20.17.24
@@ -32,7 +35,7 @@ importers:
         version: 7.1.2(@types/node@20.17.24)
       vitest:
         specifier: ^3.1.4
-        version: 3.2.4(@types/node@20.17.24)
+        version: 3.2.4(@edge-runtime/vm@5.0.0)(@types/node@20.17.24)
       zod:
         specifier: 4.0.16
         version: 4.0.16
@@ -47,6 +50,14 @@ packages:
 
   '@ai-sdk/provider@2.0.0':
     resolution: {integrity: sha512-6o7Y2SeO9vFKB8lArHXehNuusnpddKPk7xqL7T2/b+OvXMRIXUO1rR4wcv1hAFUAT9avGZshty3Wlua/XA7TvA==}
+    engines: {node: '>=18'}
+
+  '@edge-runtime/primitives@6.0.0':
+    resolution: {integrity: sha512-FqoxaBT+prPBHBwE1WXS1ocnu/VLTQyZ6NMUBAdbP7N2hsFTTxMC/jMu2D/8GAlMQfxeuppcPuCUk/HO3fpIvA==}
+    engines: {node: '>=18'}
+
+  '@edge-runtime/vm@5.0.0':
+    resolution: {integrity: sha512-NKBGBSIKUG584qrS1tyxVpX/AKJKQw5HgjYEnPLC0QsTw79JrGn+qUr8CXFb955Iy7GUdiiUv1rJ6JBGvaKb6w==}
     engines: {node: '>=18'}
 
   '@esbuild/aix-ppc64@0.25.5':
@@ -897,6 +908,12 @@ snapshots:
     dependencies:
       json-schema: 0.4.0
 
+  '@edge-runtime/primitives@6.0.0': {}
+
+  '@edge-runtime/vm@5.0.0':
+    dependencies:
+      '@edge-runtime/primitives': 6.0.0
+
   '@esbuild/aix-ppc64@0.25.5':
     optional: true
 
@@ -1539,7 +1556,7 @@ snapshots:
       '@types/node': 20.17.24
       fsevents: 2.3.3
 
-  vitest@3.2.4(@types/node@20.17.24):
+  vitest@3.2.4(@edge-runtime/vm@5.0.0)(@types/node@20.17.24):
     dependencies:
       '@types/chai': 5.2.2
       '@vitest/expect': 3.2.4
@@ -1565,6 +1582,7 @@ snapshots:
       vite-node: 3.2.4(@types/node@20.17.24)
       why-is-node-running: 2.3.0
     optionalDependencies:
+      '@edge-runtime/vm': 5.0.0
       '@types/node': 20.17.24
     transitivePeerDependencies:
       - jiti
