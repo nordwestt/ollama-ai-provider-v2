@@ -27,12 +27,10 @@ export function prepareResponsesTools({
   const toolWarnings: LanguageModelV2CallWarning[] = [];
 
   if (tools == null) {
-    console.log("NO TOOLS AVAILABLE");
     return { tools: undefined, toolChoice: undefined, toolWarnings };
   }
 
   const ollamaTools: Array<OllamaResponsesTool> = [];
-  console.log("Available tools:", tools);
 
   for (const tool of tools) {
     switch (tool.type) {
