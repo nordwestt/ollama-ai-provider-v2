@@ -192,20 +192,6 @@ ollama serve
 ollama pull llama3.2
 ```
 
-## What Makes This Provider Different?
-
-| Feature | Ollama Provider V2 | Others |
-|---------|-------------------|--------|
-| **Dependencies** | Just 2 core deps | Often 10+ dependencies |
-| **Bundle Size** | Minimal footprint | Larger bundles |
-| **Web Compatibility** | Native browser support | May require polyfills |
-| **API Integration** | Direct Ollama API | Wrapper layers |
-| **Thinking Mode** | ✅ Built-in support | ❌ Not available |
-| **Tool Streaming** | ✅ Real-time tools | ❌ Limited support |
-| **Completion Models** | ✅ Full support | ❌ Chat only |
-| **Type Safety** | ✅ Comprehensive types | ⚠️ Basic types |
-| **Maintenance** | ✅ Active updates | ⚠️ Inconsistent |
-
 ## Contributing
 
 Contributions are welcome! Here's how to get started:
