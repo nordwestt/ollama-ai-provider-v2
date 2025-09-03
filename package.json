@@ -69,6 +69,6 @@
     "url": "https://github.com/nordwestt/ollama-ai-provider-v2/issues"
   },
   "keywords": [
-    "ai"
+    "ai", "vercel", "ai-sdk", "ollama", "llm", "provider", "chat", "streaming", "tool-calling", "thinking-mode", "completion-models", "local-ai", "embeddings"
   ]
 }
