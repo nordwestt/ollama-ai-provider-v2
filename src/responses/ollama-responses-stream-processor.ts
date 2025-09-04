@@ -71,7 +71,7 @@ export class OllamaStreamProcessor {
       hasReasoningStarted: false,
       textEnded: false,
       reasoningEnded: false,
-      textId: crypto.randomUUID(),
+      textId: generateId(),
     };
   }
 
