@@ -44,7 +44,7 @@
     "@edge-runtime/vm": "^5.0.0",
     "@types/node": "20.17.24",
     "@vercel/ai-tsconfig": "./tsconfig",
-    "eslint": "^9.34.0",
+    "eslint": "^9.35.0",
     "tsup": "^8",
     "typescript": "5.8.3",
     "vite": "^7.1.2",
