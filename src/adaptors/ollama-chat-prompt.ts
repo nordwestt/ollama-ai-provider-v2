@@ -21,6 +21,7 @@ export interface ChatCompletionDeveloperMessage {
 export interface ChatCompletionUserMessage {
   role: 'user';
   content: string | Array<ChatCompletionContentPart>;
+  images?: Array<Uint8Array | string | URL>;
 }
 
 export type ChatCompletionContentPart =
