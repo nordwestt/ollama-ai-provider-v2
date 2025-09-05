@@ -1,0 +1,38 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "nordwestt"  
+    assignees:
+      - "nordwestt"  
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "automated"
+    
+    groups:
+      dev-dependencies:
+        patterns:
+          - "@types/*"
+          - "@edge-runtime/*"
+          - "typescript"
+          - "tsup"
+          - "vitest"
+        update-types:
+          - "minor"
+          - "patch"
+      ai-sdk-dependencies:
+        patterns:
+          - "@ai-sdk/*"
+        update-types:
+          - "minor"
+          - "patch"
