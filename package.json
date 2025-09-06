@@ -46,7 +46,7 @@
     "@vercel/ai-tsconfig": "./tsconfig",
     "eslint": "^9.35.0",
     "tsup": "^8",
-    "typescript": "5.8.3",
+    "typescript": "5.9.2",
     "vite": "^7.1.4",
     "vitest": "^3.1.4",
     "zod": "4.0.16"
