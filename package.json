@@ -49,7 +49,7 @@
     "typescript": "5.8.3",
     "vite": "^7.1.4",
     "vitest": "^3.1.4",
-    "zod": "4.0.16"
+    "zod": "4.1.5"
   },
   "peerDependencies": {
     "zod": "^4.0.16"

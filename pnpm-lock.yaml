@@ -13,7 +13,7 @@ importers:
         version: 2.0.0
       '@ai-sdk/provider-utils':
         specifier: ^3.0.7
-        version: 3.0.7(zod@4.0.16)
+        version: 3.0.7(zod@4.1.5)
     devDependencies:
       '@edge-runtime/vm':
         specifier: ^5.0.0
@@ -40,8 +40,8 @@ importers:
         specifier: ^3.1.4
         version: 3.2.4(@edge-runtime/vm@5.0.0)(@types/node@20.17.24)
       zod:
-        specifier: 4.0.16
-        version: 4.0.16
+        specifier: 4.1.5
+        version: 4.1.5
 
 packages:
 
@@ -1433,17 +1433,17 @@ packages:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
     engines: {node: '>=10'}
 
-  zod@4.0.16:
-    resolution: {integrity: sha512-Djo/cM339grjI7/HmN+ixYO2FzEMcWr/On50UlQ/RjrWK1I/hPpWhpC76heCptnRFpH0LMwrEbUY50HDc0V8wg==}
+  zod@4.1.5:
+    resolution: {integrity: sha512-rcUUZqlLJgBC33IT3PNMgsCq6TzLQEG/Ei/KTCU0PedSWRMAXoOUN+4t/0H+Q8bdnLPdqUYnvboJT0bn/229qg==}
 
 snapshots:
 
-  '@ai-sdk/provider-utils@3.0.7(zod@4.0.16)':
+  '@ai-sdk/provider-utils@3.0.7(zod@4.1.5)':
     dependencies:
       '@ai-sdk/provider': 2.0.0
       '@standard-schema/spec': 1.0.0
       eventsource-parser: 3.0.6
-      zod: 4.0.16
+      zod: 4.1.5
 
   '@ai-sdk/provider@2.0.0':
     dependencies:
@@ -2637,4 +2637,4 @@ snapshots:
 
   yocto-queue@0.1.0: {}
 
-  zod@4.0.16: {}
+  zod@4.1.5: {}
