@@ -8,7 +8,7 @@ import {
   FetchFunction,
   withoutTrailingSlash,
 } from '@ai-sdk/provider-utils';
-import { OllamaChatModelId, ollamaProviderOptions } from './ollama-chat-settings';
+import { OllamaChatModelId, OllamaProviderOptions, ollamaProviderOptions } from './ollama-chat-settings';
 import { OllamaCompletionLanguageModel } from './completion/ollama-completion-language-model';
 import {
   OllamaCompletionModelId,
@@ -34,7 +34,7 @@ Creates an Ollama chat model for text generation.
    */
   chat(
     modelId: OllamaChatModelId,
-    settings?: typeof ollamaProviderOptions,
+    settings?: OllamaProviderOptions,
   ): LanguageModelV2;
 
   /**
