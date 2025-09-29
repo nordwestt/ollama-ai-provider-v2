@@ -19,8 +19,8 @@ importers:
         specifier: ^5.0.0
         version: 5.0.0
       '@types/node':
-        specifier: 20.17.24
-        version: 20.17.24
+        specifier: 24.5.2
+        version: 24.5.2
       '@vercel/ai-tsconfig':
         specifier: ./tsconfig
         version: link:tsconfig
@@ -35,10 +35,10 @@ importers:
         version: 5.9.2
       vite:
         specifier: ^7.1.7
-        version: 7.1.7(@types/node@20.17.24)
+        version: 7.1.7(@types/node@24.5.2)
       vitest:
         specifier: ^3.1.4
-        version: 3.2.4(@edge-runtime/vm@5.0.0)(@types/node@20.17.24)
+        version: 3.2.4(@edge-runtime/vm@5.0.0)(@types/node@24.5.2)
       zod:
         specifier: 4.1.11
         version: 4.1.11
@@ -674,8 +674,8 @@ packages:
   '@types/json-schema@7.0.15':
     resolution: {integrity: sha512-5+fP8P8MFNC+AyZCDxrB2pkZFPGzqQWUzpSeuuVLvm8VMcorNYavBqoFcxK8bQz4Qsbn4oUEEem4wDLfcysGHA==}
 
-  '@types/node@20.17.24':
-    resolution: {integrity: sha512-d7fGCyB96w9BnWQrOsJtpyiSaBcAYYr75bnK6ZRjDbql2cGLj/3GsL5OYmLPNq76l7Gf2q4Rv9J2o6h5CrD9sA==}
+  '@types/node@24.5.2':
+    resolution: {integrity: sha512-FYxk1I7wPv3K2XBaoyH2cTnocQEu8AOZ60hPbsyukMPLv5/5qr7V1i8PLHdl6Zf87I+xZXFvPCXYjiTFq+YSDQ==}
 
   '@vitest/expect@3.2.4':
     resolution: {integrity: sha512-Io0yyORnB6sikFlt8QW5K7slY4OjqNX9jmJQ02QDda8lyM6B5oNgVWoSoKPac8/kgnCUzuHQKrSLtu/uOqqrig==}
@@ -1340,8 +1340,8 @@ packages:
   ufo@1.6.1:
     resolution: {integrity: sha512-9a4/uxlTWJ4+a5i0ooc1rU7C7YOw3wT+UGqdeNNHWnOF9qcMBgLRS+4IYUqbczewFx4mLEig6gawh7X6mFlEkA==}
 
-  undici-types@6.19.8:
-    resolution: {integrity: sha512-ve2KP6f/JnbPBFyobGHuerC9g1FYGn/F8n1LWTwNxCEzd6IfqTwUQcNXgEtmmQ6DlRrC1hrSrBnCZPokRrDHjw==}
+  undici-types@7.12.0:
+    resolution: {integrity: sha512-goOacqME2GYyOZZfb5Lgtu+1IDmAlAEu5xnD3+xTzS10hT0vzpf0SPjkXwAw9Jm+4n/mQGDP3LO8CPbYROeBfQ==}
 
   uri-js@4.4.1:
     resolution: {integrity: sha512-7rKUyy33Q1yc98pQ1DAmLtwX109F7TIfWlW1Ydo8Wl1ii1SeHieeh0HHfPeL2fMXK6z0s8ecKs9frCuLJvndBg==}
@@ -1848,9 +1848,9 @@ snapshots:
 
   '@types/json-schema@7.0.15': {}
 
-  '@types/node@20.17.24':
+  '@types/node@24.5.2':
     dependencies:
-      undici-types: 6.19.8
+      undici-types: 7.12.0
 
   '@vitest/expect@3.2.4':
     dependencies:
@@ -1860,13 +1860,13 @@ snapshots:
       chai: 5.2.0
       tinyrainbow: 2.0.0
 
-  '@vitest/mocker@3.2.4(vite@7.1.7(@types/node@20.17.24))':
+  '@vitest/mocker@3.2.4(vite@7.1.7(@types/node@24.5.2))':
     dependencies:
       '@vitest/spy': 3.2.4
       estree-walker: 3.0.3
       magic-string: 0.30.17
     optionalDependencies:
-      vite: 7.1.7(@types/node@20.17.24)
+      vite: 7.1.7(@types/node@24.5.2)
 
   '@vitest/pretty-format@3.2.4':
     dependencies:
@@ -2554,19 +2554,19 @@ snapshots:
 
   ufo@1.6.1: {}
 
-  undici-types@6.19.8: {}
+  undici-types@7.12.0: {}
 
   uri-js@4.4.1:
     dependencies:
       punycode: 2.3.1
 
-  vite-node@3.2.4(@types/node@20.17.24):
+  vite-node@3.2.4(@types/node@24.5.2):
     dependencies:
       cac: 6.7.14
       debug: 4.4.3
       es-module-lexer: 1.7.0
       pathe: 2.0.3
-      vite: 7.1.7(@types/node@20.17.24)
+      vite: 7.1.7(@types/node@24.5.2)
     transitivePeerDependencies:
       - '@types/node'
       - jiti
@@ -2581,7 +2581,7 @@ snapshots:
       - tsx
       - yaml
 
-  vite@7.1.7(@types/node@20.17.24):
+  vite@7.1.7(@types/node@24.5.2):
     dependencies:
       esbuild: 0.25.10
       fdir: 6.5.0(picomatch@4.0.3)
@@ -2590,14 +2590,14 @@ snapshots:
       rollup: 4.52.3
       tinyglobby: 0.2.15
     optionalDependencies:
-      '@types/node': 20.17.24
+      '@types/node': 24.5.2
       fsevents: 2.3.3
 
-  vitest@3.2.4(@edge-runtime/vm@5.0.0)(@types/node@20.17.24):
+  vitest@3.2.4(@edge-runtime/vm@5.0.0)(@types/node@24.5.2):
     dependencies:
       '@types/chai': 5.2.2
       '@vitest/expect': 3.2.4
-      '@vitest/mocker': 3.2.4(vite@7.1.7(@types/node@20.17.24))
+      '@vitest/mocker': 3.2.4(vite@7.1.7(@types/node@24.5.2))
       '@vitest/pretty-format': 3.2.4
       '@vitest/runner': 3.2.4
       '@vitest/snapshot': 3.2.4
@@ -2615,12 +2615,12 @@ snapshots:
       tinyglobby: 0.2.14
       tinypool: 1.1.1
       tinyrainbow: 2.0.0
-      vite: 7.1.7(@types/node@20.17.24)
-      vite-node: 3.2.4(@types/node@20.17.24)
+      vite: 7.1.7(@types/node@24.5.2)
+      vite-node: 3.2.4(@types/node@24.5.2)
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@edge-runtime/vm': 5.0.0
-      '@types/node': 20.17.24
+      '@types/node': 24.5.2
     transitivePeerDependencies:
       - jiti
       - less
