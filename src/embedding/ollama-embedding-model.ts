@@ -5,6 +5,7 @@ import {
 import {
   combineHeaders,
   createJsonResponseHandler,
+  parseProviderOptions,
   postJsonToApi,
 } from "@ai-sdk/provider-utils";
 import { z } from "zod/v4";
@@ -14,6 +15,14 @@ import {
   OllamaEmbeddingSettings,
 } from "./ollama-embedding-settings";
 import { ollamaFailedResponseHandler } from "../completion/ollama-error";
+
+const ollamaEmbeddingProviderOptions = z.object({
+  dimensions: z.number().optional(),
+  truncate: z.boolean().optional(),
+  keepAlive: z.string().optional(),
+});
+
+export type OllamaEmbeddingProviderOptions = z.infer<typeof ollamaEmbeddingProviderOptions>;
 
 export class OllamaEmbeddingModel implements EmbeddingModelV2<string> {
   readonly specificationVersion = "v2";
@@ -37,11 +46,37 @@ export class OllamaEmbeddingModel implements EmbeddingModelV2<string> {
   constructor(
     modelId: OllamaEmbeddingModelId,
     settings: OllamaEmbeddingSettings,
-    config: OllamaConfig,
+    config: OllamaConfig
   ) {
     this.modelId = modelId;
     this.settings = settings;
     this.config = config;
+  }
+
+  private async getArgs({
+    values,
+    providerOptions,
+  }: Parameters<EmbeddingModelV2<string>["doEmbed"]>[0]) {
+    // Parse provider options
+    const ollamaOptions =
+      (await parseProviderOptions({
+        provider: "ollama",
+        providerOptions,
+        schema: ollamaEmbeddingProviderOptions,
+      })) ?? {};
+
+    return {
+      args: {
+        // model id:
+        model: this.modelId,
+        input: values,
+
+        // advanced parameters:
+        dimensions: ollamaOptions.dimensions ?? this.settings.dimensions,
+        truncate: ollamaOptions.truncate,
+        keep_alive: ollamaOptions.keepAlive,
+      }
+    };
   }
 
   async doEmbed({
@@ -61,6 +96,8 @@ export class OllamaEmbeddingModel implements EmbeddingModelV2<string> {
       });
     }
 
+    const { args: body } = await this.getArgs({values, providerOptions})
+
     const {
       responseHeaders,
       value: response,
@@ -71,10 +108,7 @@ export class OllamaEmbeddingModel implements EmbeddingModelV2<string> {
         modelId: this.modelId,
       }),
       headers: combineHeaders(this.config.headers(), headers),
-      body: {
-        model: this.modelId,
-        input: values,
-      },
+      body: { ...body },
       failedResponseHandler: ollamaFailedResponseHandler,
       successfulResponseHandler: createJsonResponseHandler(
         ollamaTextEmbeddingResponseSchema,

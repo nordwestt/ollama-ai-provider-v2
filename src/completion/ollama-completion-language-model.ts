@@ -40,6 +40,8 @@ type OllamaCompletionConfig = {
   fetch?: typeof fetch;
 };
 
+export type OllamaCompletionProviderOptions = z.infer<typeof ollamaCompletionProviderOptions>;
+
 export class OllamaCompletionLanguageModel implements LanguageModelV2 {
   readonly specificationVersion = "v2";
 
