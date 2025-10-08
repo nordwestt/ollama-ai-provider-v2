@@ -97,6 +97,30 @@ describe('doEmbed', () => {
     expect(await server.calls[0].requestBodyJson).toStrictEqual({
       model: 'text-embedding-3-large',
       input: testValues,
+      dimensions: 64,
+    });
+  });
+
+  it('should pass the provider options', async () => {
+    prepareJsonResponse();
+
+    await provider.embedding('text-embedding-3-large').doEmbed({
+      values: testValues,
+      providerOptions: {
+        ollama: {
+          dimensions: 64,
+          truncate: true,
+          keepAlive: '10s',
+        },
+      }
+    });
+
+    expect(await server.calls[0].requestBodyJson).toStrictEqual({
+      model: 'text-embedding-3-large',
+      input: testValues,
+      dimensions: 64,
+      truncate: true,
+      keep_alive: '10s',
     });
   });
 
