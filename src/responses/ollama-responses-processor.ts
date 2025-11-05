@@ -76,6 +76,15 @@ export class OllamaResponseProcessor {
       });
     }
 
+    // Add thinking content
+    const thinking = response.message.thinking;
+    if (thinking != null && thinking.length > 0) {
+      content.push({
+        type: "reasoning",
+        text: thinking,
+      });
+    }
+
     // Add tool calls
     for (const toolCall of response.message.tool_calls ?? []) {
       content.push({
