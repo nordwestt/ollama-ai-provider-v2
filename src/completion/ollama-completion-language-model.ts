@@ -1,11 +1,11 @@
 import {
   combineHeaders,
   createJsonResponseHandler,
-  createJsonStreamResponseHandler,
   generateId,
   parseProviderOptions,
   ParseResult,
   postJsonToApi,
+  safeParseJSON,
 } from "@ai-sdk/provider-utils";
 import { z } from "zod/v4";
 import {
@@ -24,6 +24,39 @@ import { convertToOllamaCompletionPrompt } from "../adaptors/convert-to-ollama-c
 import { OllamaCompletionModelId, OllamaCompletionSettings } from "./ollama-completion-settings";
 import { mapOllamaFinishReason } from "../adaptors/map-ollama-finish-reason";
 import { getResponseMetadata } from "../common/get-response-metadata";
+
+// Custom handler for newline-delimited JSON streams
+function createJsonStreamResponseHandler<T>(schema: z.ZodSchema<T>) {
+  return async ({ response }: { url: string; requestBodyValues: unknown; response: Response }) => {
+    if (!response.body) {
+      throw new Error('Response body is null');
+    }
+    
+    const stream = response.body
+      .pipeThrough(new TextDecoderStream())
+      .pipeThrough(new TransformStream({
+        transform(chunk: string, controller) {
+          const lines = chunk.split('\n');
+          for (const line of lines) {
+            if (line.trim()) {
+              const result = safeParseJSON({ text: line.trim(), schema });
+              controller.enqueue(result);
+            }
+          }
+        }
+      }));
+
+    const responseHeaders: Record<string, string> = {};
+    response.headers.forEach((value, key) => {
+      responseHeaders[key] = value;
+    });
+
+    return {
+      value: stream,
+      responseHeaders,
+    };
+  };
+}
 
 // Completion-specific provider options schema
 const ollamaCompletionProviderOptions = z.object({
@@ -238,7 +271,7 @@ export class OllamaCompletionLanguageModel implements LanguageModelV2 {
     let isFirstChunk = true;
 
     return {
-      stream: response.pipeThrough(
+      stream: (response as ReadableStream<ParseResult<z.infer<typeof baseOllamaResponseSchema>>>).pipeThrough(
         new TransformStream<
           ParseResult<z.infer<typeof baseOllamaResponseSchema>>,
           LanguageModelV2StreamPart

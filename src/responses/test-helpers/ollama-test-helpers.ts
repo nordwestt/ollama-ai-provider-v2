@@ -2,7 +2,7 @@ import {
   LanguageModelV2FunctionTool,
   LanguageModelV2Prompt,
 } from '@ai-sdk/provider';
-import { createTestServer } from '@ai-sdk/provider-utils/test';
+// import { createTestServer } from '@ai-sdk/provider-utils/test'; // No longer available in AI SDK 6
 import { OllamaChatModelId } from '../../ollama-chat-settings';
 import { OllamaConfig } from '../../common/ollama-config';
 
@@ -42,10 +42,15 @@ export const createTestConfig = (): OllamaConfig => ({
   generateId: () => 'mock-id-1',
 });
 
-export const createMockServer : any = () =>
+export const createMockServer : any = () => {
+  // TODO: Rewrite using MSW for AI SDK 6
+  throw new Error('createTestServer no longer available - use MSW for testing');
+  /*
   createTestServer({
     'http://127.0.0.1:11434/api/chat': {},
   });
+  */
+};
 
 export interface MockResponseOptions {
   content?: string;

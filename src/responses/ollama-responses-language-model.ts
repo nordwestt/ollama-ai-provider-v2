@@ -5,8 +5,8 @@ import {
 import {
   combineHeaders,
   createJsonResponseHandler,
-  createJsonStreamResponseHandler,
   postJsonToApi,
+  safeParseJSON,
 } from "@ai-sdk/provider-utils";
 import { OllamaConfig } from "../common/ollama-config";
 import { ollamaFailedResponseHandler } from "../completion/ollama-error";
@@ -20,6 +20,41 @@ import {
   baseOllamaResponseSchema 
 } from "./ollama-responses-processor";
 import { OllamaStreamProcessor } from "./ollama-responses-stream-processor";
+import { z } from "zod/v4";
+import { ParseResult } from "@ai-sdk/provider-utils";
+
+// Custom handler for newline-delimited JSON streams
+function createJsonStreamResponseHandler<T>(schema: z.ZodSchema<T>) {
+  return async ({ response }: { url: string; requestBodyValues: unknown; response: Response }) => {
+    if (!response.body) {
+      throw new Error('Response body is null');
+    }
+    
+    const stream = response.body
+      .pipeThrough(new TextDecoderStream())
+      .pipeThrough(new TransformStream({
+        transform(chunk: string, controller) {
+          const lines = chunk.split('\n');
+          for (const line of lines) {
+            if (line.trim()) {
+              const result = safeParseJSON({ text: line.trim(), schema });
+              controller.enqueue(result);
+            }
+          }
+        }
+      }));
+
+    const responseHeaders: Record<string, string> = {};
+    response.headers.forEach((value, key) => {
+      responseHeaders[key] = value;
+    });
+
+    return {
+      value: stream,
+      responseHeaders,
+    };
+  };
+}
 
 export class OllamaResponsesLanguageModel implements LanguageModelV2 {
   readonly specificationVersion = "v2";
@@ -104,7 +139,7 @@ export class OllamaResponsesLanguageModel implements LanguageModelV2 {
     const streamProcessor = new OllamaStreamProcessor(this.config);
 
     return {
-      stream: response.pipeThrough(
+      stream: (response as ReadableStream<ParseResult<z.infer<typeof baseOllamaResponseSchema>>>).pipeThrough(
         streamProcessor.createTransformStream(warnings, options)
       ),
       request: { body },
