@@ -13,7 +13,19 @@ import {
 describe('OllamaResponsesLanguageModel', () => {
   const testConfig = createTestConfig();
   const model = new OllamaResponsesLanguageModel(TEST_MODEL_ID, testConfig);
-  const server = createMockServer();
+  const mockServer = createMockServer();
+
+  beforeAll(() => {
+    mockServer.listen();
+  });
+
+  afterEach(() => {
+    mockServer.resetHandlers();
+  });
+
+  afterAll(() => {
+    mockServer.close();
+  });
 
   describe('Model Properties', () => {
     it('should have correct specification version', () => {
@@ -36,7 +48,7 @@ describe('OllamaResponsesLanguageModel', () => {
   describe('doGenerate', () => {
     describe('Basic Generation', () => {
       it('should generate text response', async () => {
-        prepareJsonResponse(server);
+        prepareJsonResponse(mockServer);
 
         const result = await model.doGenerate({
           prompt: TEST_PROMPT,
@@ -58,7 +70,7 @@ describe('OllamaResponsesLanguageModel', () => {
       });
 
       it('should expose raw response data', async () => {
-        prepareJsonResponse(server, {
+        prepareJsonResponse(mockServer, {
           headers: { 'x-custom-header': 'test-value' },
         });
 
@@ -75,7 +87,7 @@ describe('OllamaResponsesLanguageModel', () => {
 
     describe('Tool Calls', () => {
       it('should handle tool calls', async () => {
-        prepareJsonResponse(server, {
+        prepareJsonResponse(mockServer, {
           content: 'I need to check the weather for you.',
           toolCalls: [
             {
@@ -105,7 +117,7 @@ describe('OllamaResponsesLanguageModel', () => {
       });
 
       it('should generate tool call ID when missing', async () => {
-        prepareJsonResponse(server, {
+        prepareJsonResponse(mockServer, {
           content: '',
           toolCalls: [
             {
@@ -133,7 +145,7 @@ describe('OllamaResponsesLanguageModel', () => {
 
     describe('Settings and Options', () => {
       it('should return warnings for unsupported settings', async () => {
-        prepareJsonResponse(server);
+        prepareJsonResponse(mockServer);
 
         const result = await model.doGenerate({
           prompt: TEST_PROMPT,
@@ -154,7 +166,7 @@ describe('OllamaResponsesLanguageModel', () => {
       });
 
       it('should handle JSON response format', async () => {
-        prepareJsonResponse(server, {
+        prepareJsonResponse(mockServer, {
           content: '{"result": "success"}',
         });
 
@@ -176,7 +188,7 @@ describe('OllamaResponsesLanguageModel', () => {
       });
 
       it('should handle provider options', async () => {
-        prepareJsonResponse(server);
+        prepareJsonResponse(mockServer);
 
         const result = await model.doGenerate({
           prompt: TEST_PROMPT,
@@ -195,7 +207,7 @@ describe('OllamaResponsesLanguageModel', () => {
 
     describe('Error Handling', () => {
       it('should handle API errors', async () => {
-        prepareErrorResponse(server);
+        prepareErrorResponse(mockServer);
 
         await expect(
           model.doGenerate({
@@ -209,7 +221,7 @@ describe('OllamaResponsesLanguageModel', () => {
   describe('doStream', () => {
     describe('Basic Streaming', () => {
       it('should handle basic streaming', async () => {
-        prepareStreamResponse(server);
+        prepareStreamResponse(mockServer);
 
         const result = await model.doStream({
           prompt: TEST_PROMPT,
@@ -221,7 +233,7 @@ describe('OllamaResponsesLanguageModel', () => {
       });
 
       it('should handle stream with warnings', async () => {
-        prepareStreamResponse(server);
+        prepareStreamResponse(mockServer);
 
         const result = await model.doStream({
           prompt: TEST_PROMPT,
