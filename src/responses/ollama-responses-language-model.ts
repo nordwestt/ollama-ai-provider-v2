@@ -1,28 +1,25 @@
-import {
-  LanguageModelV2,
-  LanguageModelV2CallWarning,
-} from "@ai-sdk/provider";
+import { LanguageModelV3, SharedV3Warning } from '@ai-sdk/provider';
 import {
   combineHeaders,
   createJsonResponseHandler,
-  createJsonStreamResponseHandler,
   postJsonToApi,
-} from "@ai-sdk/provider-utils";
-import { OllamaConfig } from "../common/ollama-config";
-import { ollamaFailedResponseHandler } from "../completion/ollama-error";
-import { OllamaChatModelId } from "../ollama-chat-settings";
-import { 
+  parseJsonEventStream,
+} from '@ai-sdk/provider-utils';
+import { OllamaConfig } from '../common/ollama-config.js';
+import { ollamaFailedResponseHandler } from '../completion/ollama-error.js';
+import { OllamaChatModelId } from '../ollama-chat-settings.js';
+import {
   OllamaRequestBuilder,
-  OllamaResponsesProviderOptions 
-} from "./ollama-responses-request-builder";
-import { 
-  OllamaResponseProcessor, 
-  baseOllamaResponseSchema 
-} from "./ollama-responses-processor";
-import { OllamaStreamProcessor } from "./ollama-responses-stream-processor";
+  OllamaResponsesProviderOptions,
+} from './ollama-responses-request-builder.js';
+import { OllamaStreamProcessor } from './ollama-responses-stream-processor.js';
+import {
+  baseOllamaResponseSchema,
+  OllamaResponseProcessor,
+} from './ollama-responses-processor.js';
 
-export class OllamaResponsesLanguageModel implements LanguageModelV2 {
-  readonly specificationVersion = "v2";
+export class OllamaResponsesLanguageModel implements LanguageModelV3 {
+  readonly specificationVersion = 'v3';
   readonly modelId: OllamaChatModelId;
 
   private readonly config: OllamaConfig;
@@ -37,9 +34,7 @@ export class OllamaResponsesLanguageModel implements LanguageModelV2 {
   }
 
   readonly supportedUrls: Record<string, RegExp[]> = {
-    'image/*': [
-      /^https?:\/\/.*$/
-    ]
+    'image/*': [/^https?:\/\/.*$/],
   };
 
   get provider(): string {
@@ -47,8 +42,8 @@ export class OllamaResponsesLanguageModel implements LanguageModelV2 {
   }
 
   async doGenerate(
-    options: Parameters<LanguageModelV2["doGenerate"]>[0],
-  ): Promise<Awaited<ReturnType<LanguageModelV2["doGenerate"]>>> {
+    options: Parameters<LanguageModelV3['doGenerate']>[0]
+  ): Promise<Awaited<ReturnType<LanguageModelV3['doGenerate']>>> {
     const { args: body, warnings } = await this.prepareRequest(options);
 
     const {
@@ -57,18 +52,21 @@ export class OllamaResponsesLanguageModel implements LanguageModelV2 {
       rawValue: rawResponse,
     } = await postJsonToApi({
       url: this.config.url({
-        path: "/chat",
+        path: '/chat',
         modelId: this.modelId,
       }),
       headers: combineHeaders(this.config.headers(), options.headers),
       body: { ...body, stream: false },
       failedResponseHandler: ollamaFailedResponseHandler,
-      successfulResponseHandler: createJsonResponseHandler(baseOllamaResponseSchema),
+      successfulResponseHandler: createJsonResponseHandler(
+        baseOllamaResponseSchema
+      ),
       abortSignal: options.abortSignal,
       fetch: this.config.fetch,
     });
 
-    const processedResponse = this.responseProcessor.processGenerateResponse(response);
+    const processedResponse =
+      this.responseProcessor.processGenerateResponse(response);
 
     return {
       ...processedResponse,
@@ -84,21 +82,28 @@ export class OllamaResponsesLanguageModel implements LanguageModelV2 {
   }
 
   async doStream(
-    options: Parameters<LanguageModelV2["doStream"]>[0],
-  ): Promise<Awaited<ReturnType<LanguageModelV2["doStream"]>>> {
+    options: Parameters<LanguageModelV3['doStream']>[0]
+  ): Promise<Awaited<ReturnType<LanguageModelV3['doStream']>>> {
     const { args: body, warnings } = await this.prepareRequest(options);
 
-    const { responseHeaders, value: response } = await postJsonToApi({
+    const { responseHeaders, value: binaryStream } = await postJsonToApi({
       url: this.config.url({
-        path: "/chat",
+        path: '/chat',
         modelId: this.modelId,
       }),
       headers: combineHeaders(this.config.headers(), options.headers),
       body: { ...body, stream: true },
       failedResponseHandler: ollamaFailedResponseHandler,
-      successfulResponseHandler: createJsonStreamResponseHandler(baseOllamaResponseSchema),
+      successfulResponseHandler: async ({ response }) => ({
+        value: response.body!,
+      }),
       abortSignal: options.abortSignal,
       fetch: this.config.fetch,
+    });
+
+    const response = parseJsonEventStream({
+      stream: binaryStream,
+      schema: baseOllamaResponseSchema,
     });
 
     const streamProcessor = new OllamaStreamProcessor(this.config);
@@ -112,7 +117,9 @@ export class OllamaResponsesLanguageModel implements LanguageModelV2 {
     };
   }
 
-  private async prepareRequest(options: Parameters<LanguageModelV2["doGenerate"]>[0]) {
+  private async prepareRequest(
+    options: Parameters<LanguageModelV3['doGenerate']>[0]
+  ) {
     return await this.requestBuilder.buildRequest({
       modelId: this.modelId,
       ...options,

@@ -1,16 +1,16 @@
 import {
-  LanguageModelV2FunctionTool,
-  LanguageModelV2Prompt,
+  LanguageModelV3FunctionTool,
+  LanguageModelV3Prompt,
 } from '@ai-sdk/provider';
-import { createTestServer } from '@ai-sdk/provider-utils/test';
-import { OllamaChatModelId } from '../../ollama-chat-settings';
-import { OllamaConfig } from '../../common/ollama-config';
+import { createTestServer } from '@ai-sdk/test-server/with-vitest';
+import { OllamaChatModelId } from '../../ollama-chat-settings.js';
+import { OllamaConfig } from '../../common/ollama-config.js';
 
-export const TEST_PROMPT: LanguageModelV2Prompt = [
+export const TEST_PROMPT: LanguageModelV3Prompt = [
   { role: 'user', content: [{ type: 'text', text: 'Hello' }] },
 ];
 
-export const TEST_TOOLS: Array<LanguageModelV2FunctionTool> = [
+export const TEST_TOOLS: Array<LanguageModelV3FunctionTool> = [
   {
     type: 'function',
     name: 'weather',
@@ -42,9 +42,14 @@ export const createTestConfig = (): OllamaConfig => ({
   generateId: () => 'mock-id-1',
 });
 
-export const createMockServer : any = () =>
+export const createMockServer: any = () =>
   createTestServer({
-    'http://127.0.0.1:11434/api/chat': {},
+    'http://127.0.0.1:11434/api/chat': {
+      response: {
+        type: 'json-value',
+        body: { count: 1 },
+      },
+    },
   });
 
 export interface MockResponseOptions {
@@ -117,4 +122,4 @@ export const prepareStreamResponse = (
       eval_count: 5,
     },
   };
-}; 
+};
