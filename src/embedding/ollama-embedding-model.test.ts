@@ -1,6 +1,6 @@
 import { EmbeddingModelV2Embedding } from '@ai-sdk/provider';
-import { createTestServer } from '@ai-sdk/provider-utils/test';
-import { createOllama } from '../ollama-provider';
+import { createTestServer } from '@ai-sdk/test-server/with-vitest';
+import { createOllama } from '../ollama-provider.js';
 
 const dummyEmbeddings = [
   [0.1, 0.2, 0.3, 0.4, 0.5],
@@ -90,9 +90,11 @@ describe('doEmbed', () => {
   it('should pass the dimensions setting', async () => {
     prepareJsonResponse();
 
-    await provider.embedding('text-embedding-3-large', { dimensions: 64 }).doEmbed({
-      values: testValues,
-    });
+    await provider
+      .embedding('text-embedding-3-large', { dimensions: 64 })
+      .doEmbed({
+        values: testValues,
+      });
 
     expect(await server.calls[0].requestBodyJson).toStrictEqual({
       model: 'text-embedding-3-large',
@@ -112,7 +114,7 @@ describe('doEmbed', () => {
           truncate: true,
           keepAlive: '10s',
         },
-      }
+      },
     });
 
     expect(await server.calls[0].requestBodyJson).toStrictEqual({

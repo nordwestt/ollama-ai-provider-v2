@@ -1,30 +1,30 @@
 import {
-  LanguageModelV2CallOptions,
-  LanguageModelV2CallWarning,
+  LanguageModelV3CallOptions,
+  SharedV3Warning,
   UnsupportedFunctionalityError,
-} from "@ai-sdk/provider";
-import { OllamaResponsesTool } from "./ollama-responses-api-types";
+} from '@ai-sdk/provider';
+import { OllamaResponsesTool } from './ollama-responses-api-types.js';
 
 export function prepareResponsesTools({
   tools,
   toolChoice,
 }: {
-  tools: LanguageModelV2CallOptions["tools"];
-  toolChoice?: LanguageModelV2CallOptions["toolChoice"];
+  tools: LanguageModelV3CallOptions['tools'];
+  toolChoice?: LanguageModelV3CallOptions['toolChoice'];
 }): {
   tools?: Array<OllamaResponsesTool>;
   toolChoice?:
-    | "auto"
-    | "none"
-    | "required"
-    | { type: "web_search_preview" }
-    | { type: "function"; name: string };
-  toolWarnings: LanguageModelV2CallWarning[];
+    | 'auto'
+    | 'none'
+    | 'required'
+    | { type: 'web_search_preview' }
+    | { type: 'function'; name: string };
+  toolWarnings: SharedV3Warning[];
 } {
   // when the tools array is empty, change it to undefined to prevent errors:
   tools = tools?.length ? tools : undefined;
 
-  const toolWarnings: LanguageModelV2CallWarning[] = [];
+  const toolWarnings: SharedV3Warning[] = [];
 
   if (tools == null) {
     return { tools: undefined, toolChoice: undefined, toolWarnings };
@@ -34,20 +34,19 @@ export function prepareResponsesTools({
 
   for (const tool of tools) {
     switch (tool.type) {
-      case "function": {
+      case 'function': {
         // Ensure parameters is always a non-null object (even if empty)
         let parameters = tool.inputSchema;
-        if(!parameters){
+        if (!parameters) {
           parameters = {
-            type: "object",
+            type: 'object',
             properties: {},
             required: [],
           };
-        }
-        else if (
+        } else if (
           parameters &&
-          typeof parameters === "object" &&
-          parameters.type === "object" &&
+          typeof parameters === 'object' &&
+          parameters.type === 'object' &&
           parameters.properties &&
           Object.keys(parameters.properties).length === 0
         ) {
@@ -57,10 +56,10 @@ export function prepareResponsesTools({
             properties: {},
             required: [],
           };
-        } 
-        
+        }
+
         ollamaTools.push({
-          type: "function",
+          type: 'function',
           function: {
             name: tool.name,
             description: tool.description,
@@ -70,7 +69,10 @@ export function prepareResponsesTools({
         break;
       }
       default:
-        toolWarnings.push({ type: "unsupported-tool", tool });
+        toolWarnings.push({
+          type: 'unsupported',
+          feature: `tool type: ${tool.type}`,
+        });
         break;
     }
   }
@@ -82,17 +84,17 @@ export function prepareResponsesTools({
   const type = toolChoice.type;
 
   switch (type) {
-    case "auto":
-    case "none":
-    case "required":
+    case 'auto':
+    case 'none':
+    case 'required':
       return { tools: ollamaTools, toolChoice: type, toolWarnings };
-    case "tool":
+    case 'tool':
       return {
         tools: ollamaTools,
         toolChoice:
-          toolChoice.toolName == "web_search_preview"
-            ? { type: "web_search_preview" }
-            : { type: "function", name: toolChoice.toolName },
+          toolChoice.toolName == 'web_search_preview'
+            ? { type: 'web_search_preview' }
+            : { type: 'function', name: toolChoice.toolName },
         toolWarnings,
       };
     default: {

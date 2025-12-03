@@ -1,14 +1,13 @@
+import { SharedV3Warning, LanguageModelV3 } from '@ai-sdk/provider';
+import { parseProviderOptions } from '@ai-sdk/provider-utils';
+import { z } from 'zod/v4';
+import { convertToOllamaResponsesMessages } from './convert-to-ollama-responses-messages.js';
+import { convertToOllamaChatMessages } from '../adaptors/convert-to-ollama-chat-messages.js';
+import { prepareResponsesTools } from './ollama-responses-prepare-tools.js';
 import {
-  LanguageModelV2CallWarning,
-  LanguageModelV2,
-} from "@ai-sdk/provider";
-import { parseProviderOptions } from "@ai-sdk/provider-utils";
-import { z } from "zod/v4";
-import { convertToOllamaResponsesMessages } from "./convert-to-ollama-responses-messages";
-import { convertToOllamaChatMessages } from "../adaptors/convert-to-ollama-chat-messages";
-import { prepareResponsesTools } from "./ollama-responses-prepare-tools";
-import { OllamaChatModelId, ollamaProviderOptions } from "../ollama-chat-settings";
-
+  OllamaChatModelId,
+  ollamaProviderOptions,
+} from '../ollama-chat-settings.js';
 
 export type OllamaResponsesProviderOptions = z.infer<
   typeof ollamaProviderOptions
@@ -44,7 +43,7 @@ interface RequestBuilderResult {
     tools?: any;
     tool_choice?: any;
   };
-  warnings: LanguageModelV2CallWarning[];
+  warnings: SharedV3Warning[];
 }
 
 export class OllamaRequestBuilder {
@@ -75,7 +74,7 @@ export class OllamaRequestBuilder {
     const { messages, warnings: messageWarnings } =
       convertToOllamaResponsesMessages({
         prompt,
-        systemMessageMode: "system",
+        systemMessageMode: 'system',
       });
 
     warnings.push(...messageWarnings);
@@ -92,11 +91,14 @@ export class OllamaRequestBuilder {
       ollamaOptions,
     });
 
-    const { tools: ollamaTools, toolChoice: ollamaToolChoice, toolWarnings } =
-      prepareResponsesTools({
-        tools,
-        toolChoice,
-      });
+    const {
+      tools: ollamaTools,
+      toolChoice: ollamaToolChoice,
+      toolWarnings,
+    } = prepareResponsesTools({
+      tools,
+      toolChoice,
+    });
 
     return {
       args: {
@@ -120,29 +122,31 @@ export class OllamaRequestBuilder {
     presencePenalty?: number;
     frequencyPenalty?: number;
     stopSequences?: string[];
-  }): LanguageModelV2CallWarning[] {
-    const warnings: LanguageModelV2CallWarning[] = [];
+  }): SharedV3Warning[] {
+    const warnings: SharedV3Warning[] = [];
 
     const unsupportedSettings = [
-      { value: topK, name: "topK" },
-      { value: seed, name: "seed" },
-      { value: presencePenalty, name: "presencePenalty" },
-      { value: frequencyPenalty, name: "frequencyPenalty" },
-      { value: stopSequences, name: "stopSequences" },
+      { value: topK, name: 'topK' },
+      { value: seed, name: 'seed' },
+      { value: presencePenalty, name: 'presencePenalty' },
+      { value: frequencyPenalty, name: 'frequencyPenalty' },
+      { value: stopSequences, name: 'stopSequences' },
     ] as const;
 
     for (const { value, name } of unsupportedSettings) {
       if (value != null) {
-        warnings.push({ type: "unsupported-setting", setting: name });
+        warnings.push({ type: 'unsupported', feature: name });
       }
     }
 
     return warnings;
   }
 
-  private async parseProviderOptions(providerOptions: any): Promise<OllamaResponsesProviderOptions | null> {
+  private async parseProviderOptions(
+    providerOptions: any
+  ): Promise<OllamaResponsesProviderOptions | null> {
     const result = await parseProviderOptions({
-      provider: "ollama",
+      provider: 'ollama',
       providerOptions,
       schema: ollamaProviderOptions,
     });
@@ -170,18 +174,18 @@ export class OllamaRequestBuilder {
       model: modelId,
       messages: convertToOllamaChatMessages({
         prompt,
-        systemMessageMode: "system",
+        systemMessageMode: 'system',
       }),
       temperature,
       top_p: topP,
       max_output_tokens: maxOutputTokens,
 
-      ...(responseFormat?.type === "json" && {
-        format: responseFormat.schema != null ? responseFormat.schema : "json",
+      ...(responseFormat?.type === 'json' && {
+        format: responseFormat.schema != null ? responseFormat.schema : 'json',
       }),
 
       think: ollamaOptions?.think ?? false,
-      options: ollamaOptions?.options?? undefined
+      options: ollamaOptions?.options ?? undefined,
     };
   }
-} 
+}

@@ -1,13 +1,13 @@
 import {
-  LanguageModelV2Content,
-  LanguageModelV2FinishReason,
-  LanguageModelV2Usage,
-  SharedV2ProviderMetadata,
-} from "@ai-sdk/provider";
-import { generateId } from "@ai-sdk/provider-utils";
-import { z } from "zod/v4";
-import { mapOllamaFinishReason } from "../adaptors/map-ollama-finish-reason";
-import { OllamaConfig } from "../common/ollama-config";
+  LanguageModelV3Content,
+  LanguageModelV3FinishReason,
+  LanguageModelV3Usage,
+  SharedV3ProviderMetadata,
+} from '@ai-sdk/provider';
+import { generateId } from '@ai-sdk/provider-utils';
+import { z } from 'zod/v4';
+import { mapOllamaFinishReason } from '../adaptors/map-ollama-finish-reason.js';
+import { OllamaConfig } from '../common/ollama-config.js';
 
 export const baseOllamaResponseSchema = z.object({
   model: z.string(),
@@ -25,7 +25,7 @@ export const baseOllamaResponseSchema = z.object({
             arguments: z.record(z.string(), z.any()),
           }),
           id: z.string().optional(),
-        }),
+        })
       )
       .optional()
       .nullable(),
@@ -46,15 +46,15 @@ export class OllamaResponseProcessor {
   constructor(private config: OllamaConfig) {}
 
   processGenerateResponse(response: OllamaResponse): {
-    content: LanguageModelV2Content[];
-    finishReason: LanguageModelV2FinishReason;
-    usage: LanguageModelV2Usage;
-    providerMetadata: SharedV2ProviderMetadata;
+    content: LanguageModelV3Content[];
+    finishReason: LanguageModelV3FinishReason;
+    usage: LanguageModelV3Usage;
+    providerMetadata: SharedV3ProviderMetadata;
   } {
     const content = this.extractContent(response);
     const finishReason = mapOllamaFinishReason(response.done_reason);
     const usage = this.extractUsage(response);
-    const providerMetadata: SharedV2ProviderMetadata = { ollama: {} };
+    const providerMetadata: SharedV3ProviderMetadata = { ollama: {} };
 
     return {
       content,
@@ -64,14 +64,14 @@ export class OllamaResponseProcessor {
     };
   }
 
-  private extractContent(response: OllamaResponse): LanguageModelV2Content[] {
-    const content: LanguageModelV2Content[] = [];
+  private extractContent(response: OllamaResponse): LanguageModelV3Content[] {
+    const content: LanguageModelV3Content[] = [];
 
     // Add text content
     const text = response.message.content;
     if (text != null && text.length > 0) {
       content.push({
-        type: "text",
+        type: 'text',
         text,
       });
     }
@@ -80,7 +80,7 @@ export class OllamaResponseProcessor {
     const thinking = response.message.thinking;
     if (thinking != null && thinking.length > 0) {
       content.push({
-        type: "reasoning",
+        type: 'reasoning',
         text: thinking,
       });
     }
@@ -88,8 +88,8 @@ export class OllamaResponseProcessor {
     // Add tool calls
     for (const toolCall of response.message.tool_calls ?? []) {
       content.push({
-        type: "tool-call" as const,
-        toolCallId: toolCall.id ?? (this.config.generateId?.() ?? generateId()),
+        type: 'tool-call' as const,
+        toolCallId: toolCall.id ?? this.config.generateId?.() ?? generateId(),
         toolName: toolCall.function.name,
         input: JSON.stringify(toolCall.function.arguments),
       });
@@ -98,11 +98,12 @@ export class OllamaResponseProcessor {
     return content;
   }
 
-  private extractUsage(response: OllamaResponse): LanguageModelV2Usage {
+  private extractUsage(response: OllamaResponse): LanguageModelV3Usage {
     return {
       inputTokens: response.prompt_eval_count ?? undefined,
       outputTokens: response.eval_count ?? undefined,
-      totalTokens: (response.prompt_eval_count ?? 0) + (response.eval_count ?? 0),
+      totalTokens:
+        (response.prompt_eval_count ?? 0) + (response.eval_count ?? 0),
       reasoningTokens: undefined, // Ollama doesn't provide separate reasoning tokens
       cachedInputTokens: undefined,
     };
@@ -115,7 +116,7 @@ export class OllamaResponseProcessor {
  * multiple JSON objects separated by newlines (NDJSON-like behavior).
  */
 export function extractOllamaResponseObjectsFromChunk(
-  chunk: any,
+  chunk: any
 ): OllamaResponse[] {
   if (chunk.success) {
     return [chunk.value];
@@ -123,14 +124,14 @@ export function extractOllamaResponseObjectsFromChunk(
 
   const results: OllamaResponse[] = [];
   const raw = (chunk.error as any)?.text;
-  if (typeof raw !== "string" || raw.length === 0) {
+  if (typeof raw !== 'string' || raw.length === 0) {
     return results;
   }
 
   const lines = raw.split(/\r?\n/);
   for (const line of lines) {
     const trimmed = line.trim();
-    if (trimmed === "") continue;
+    if (trimmed === '') continue;
     try {
       const parsed = JSON.parse(trimmed);
       const validated = baseOllamaResponseSchema.safeParse(parsed);
@@ -143,4 +144,4 @@ export function extractOllamaResponseObjectsFromChunk(
   }
 
   return results;
-} 
+}

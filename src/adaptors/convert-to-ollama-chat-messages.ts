@@ -2,7 +2,7 @@ import {
   LanguageModelV2FilePart,
   LanguageModelV2Prompt,
 } from '@ai-sdk/provider';
-import { OllamaChatPrompt } from './ollama-chat-prompt';
+import { OllamaChatPrompt } from './ollama-chat-prompt.js';
 
 export function convertToOllamaChatMessages({
   prompt,
@@ -31,7 +31,7 @@ export function convertToOllamaChatMessages({
           default: {
             const _exhaustiveCheck: never = systemMessageMode;
             throw new Error(
-              `Unsupported system message mode: ${_exhaustiveCheck}`,
+              `Unsupported system message mode: ${_exhaustiveCheck}`
             );
           }
         }
@@ -44,15 +44,20 @@ export function convertToOllamaChatMessages({
           break;
         }
 
-        const userText = content.filter((part) => part.type === 'text').map((part) => part.text).join('');
+        const userText = content
+          .filter(part => part.type === 'text')
+          .map(part => part.text)
+          .join('');
         const images = content
-          .filter((part) => part.type === 'file' && part.mediaType.startsWith('image/'))
-          .map((part) => (part as LanguageModelV2FilePart).data);
+          .filter(
+            part => part.type === 'file' && part.mediaType.startsWith('image/')
+          )
+          .map(part => (part as LanguageModelV2FilePart).data);
 
         messages.push({
           role: 'user',
           content: userText.length > 0 ? userText : [],
-          images: images.length > 0 ? images : undefined
+          images: images.length > 0 ? images : undefined,
         });
 
         break;

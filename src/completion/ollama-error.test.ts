@@ -1,5 +1,5 @@
 import { safeParseJSON } from '@ai-sdk/provider-utils';
-import { ollamaErrorDataSchema } from './ollama-error';
+import { ollamaErrorDataSchema } from './ollama-error.js';
 
 describe('ollamaErrorDataSchema', () => {
   it('should parse OpenRouter resource exhausted error', async () => {
