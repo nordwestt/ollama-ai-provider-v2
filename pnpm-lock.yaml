@@ -13,7 +13,7 @@ importers:
         version: 2.0.0
       '@ai-sdk/provider-utils':
         specifier: ^3.0.17
-        version: 3.0.17(zod@4.1.12)
+        version: 3.0.17(zod@4.1.13)
     devDependencies:
       '@edge-runtime/vm':
         specifier: ^5.0.0
@@ -43,8 +43,8 @@ importers:
         specifier: ^4.0.10
         version: 4.0.10(@edge-runtime/vm@5.0.0)(@types/node@24.10.1)(msw@2.12.2(@types/node@24.10.1)(typescript@5.9.3))
       zod:
-        specifier: 4.1.12
-        version: 4.1.12
+        specifier: 4.1.13
+        version: 4.1.13
 
 packages:
 
@@ -1560,17 +1560,17 @@ packages:
     resolution: {integrity: sha512-U/PBtDf35ff0D8X8D0jfdzHYEPFxAI7jJlxZXwCSez5M3190m+QobIfh+sWDWSHMCWWJN2AWamkegn6vr6YBTw==}
     engines: {node: '>=18'}
 
-  zod@4.1.12:
-    resolution: {integrity: sha512-JInaHOamG8pt5+Ey8kGmdcAcg3OL9reK8ltczgHTAwNhMys/6ThXHityHxVV2p3fkw/c+MAvBHFVYHFZDmjMCQ==}
+  zod@4.1.13:
+    resolution: {integrity: sha512-AvvthqfqrAhNH9dnfmrfKzX5upOdjUVJYFqNSlkmGf64gRaTzlPwz99IHYnVs28qYAybvAlBV+H7pn0saFY4Ig==}
 
 snapshots:
 
-  '@ai-sdk/provider-utils@3.0.17(zod@4.1.12)':
+  '@ai-sdk/provider-utils@3.0.17(zod@4.1.13)':
     dependencies:
       '@ai-sdk/provider': 2.0.0
       '@standard-schema/spec': 1.0.0
       eventsource-parser: 3.0.6
-      zod: 4.1.12
+      zod: 4.1.13
 
   '@ai-sdk/provider@2.0.0':
     dependencies:
@@ -2854,4 +2854,4 @@ snapshots:
 
   yoctocolors-cjs@2.1.3: {}
 
-  zod@4.1.12: {}
+  zod@4.1.13: {}
