@@ -7,7 +7,7 @@ import { z } from "zod/v4";
 import { convertToOllamaResponsesMessages } from "./convert-to-ollama-responses-messages";
 import { convertToOllamaChatMessages } from "../adaptors/convert-to-ollama-chat-messages";
 import { prepareResponsesTools } from "./ollama-responses-prepare-tools";
-import { OllamaChatModelId, ollamaProviderOptions } from "../ollama-chat-settings";
+import { OllamaChatModelId, ollamaProviderOptions, validateThinkParameter } from "../ollama-chat-settings";
 
 
 export type OllamaResponsesProviderOptions = z.infer<
@@ -40,7 +40,7 @@ interface RequestBuilderResult {
     max_output_tokens?: number;
     format?: any;
     user?: string;
-    think?: boolean;
+    think?: boolean | "low" | "medium" | "high";
     tools?: any;
     tool_choice?: any;
   };
@@ -166,6 +166,9 @@ export class OllamaRequestBuilder {
     responseFormat?: any;
     ollamaOptions: OllamaResponsesProviderOptions | null;
   }) {
+    // Validate and normalize the think parameter based on model type
+    const validatedThink = validateThinkParameter(modelId, ollamaOptions?.think);
+
     return {
       model: modelId,
       messages: convertToOllamaChatMessages({
@@ -180,7 +183,7 @@ export class OllamaRequestBuilder {
         format: responseFormat.schema != null ? responseFormat.schema : "json",
       }),
 
-      think: ollamaOptions?.think ?? false,
+      think: validatedThink,
       options: ollamaOptions?.options?? undefined
     };
   }

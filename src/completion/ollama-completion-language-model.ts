@@ -24,10 +24,14 @@ import { convertToOllamaCompletionPrompt } from "../adaptors/convert-to-ollama-c
 import { OllamaCompletionModelId, OllamaCompletionSettings } from "./ollama-completion-settings";
 import { mapOllamaFinishReason } from "../adaptors/map-ollama-finish-reason";
 import { getResponseMetadata } from "../common/get-response-metadata";
+import { validateThinkParameter } from "../ollama-chat-settings";
 
 // Completion-specific provider options schema
 const ollamaCompletionProviderOptions = z.object({
-  think: z.boolean().optional(),
+  think: z.union([
+    z.boolean(),
+    z.enum(["low", "medium", "high"])
+  ]).optional(),
   user: z.string().optional(),
   suffix: z.string().optional(),
   echo: z.boolean().optional(),
@@ -121,6 +125,9 @@ export class OllamaCompletionLanguageModel implements LanguageModelV2 {
 
     const stop = [...(stopSequences ?? []), ...(userStopSequences ?? [])];
 
+    // Validate and normalize the think parameter based on model type
+    const validatedThink = validateThinkParameter(this.modelId, ollamaOptions.think);
+
     return {
       args: {
         // model id:
@@ -128,7 +135,7 @@ export class OllamaCompletionLanguageModel implements LanguageModelV2 {
 
         // Ollama-supported settings:
         user: ollamaOptions.user,
-        think: ollamaOptions.think,
+        think: validatedThink,
 
         // standardized settings:
         max_tokens: maxOutputTokens,

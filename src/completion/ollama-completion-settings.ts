@@ -7,9 +7,12 @@ export interface OllamaCompletionSettings {
    * the model's thinking from the model's output. When disabled, the model will not think 
    * and directly output the content.
    * 
-   * Only supported by certain models like DeepSeek R1 and Qwen 3.
+   * For GPT-OSS models: accepts "low", "medium", or "high" to tune trace length.
+   * For other models: accepts boolean true/false.
+   * 
+   * Only supported by certain models like DeepSeek R1, Qwen 3, and GPT-OSS.
    */
-  think?: boolean;
+  think?: boolean | "low" | "medium" | "high";
 
   /**
    * Echo back the prompt in addition to the completion.

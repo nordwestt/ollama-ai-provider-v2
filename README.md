@@ -82,10 +82,18 @@ const { text, toolCalls } = await generateText({
 Unique feature for models that support chain-of-thought reasoning:
 
 ```typescript
+// For most models - simple boolean
 const { text } = await generateText({
   model: ollama('deepseek-r1:7b'),
   providerOptions: { ollama: { think: true } },
   prompt: 'Solve this complex math problem step by step: 2x + 5 = 17',
+});
+
+// For GPT-OSS models - use thinking levels for trace length control
+const { text } = await generateText({
+  model: ollama('gpt-oss:7b'),
+  providerOptions: { ollama: { think: 'high' } }, // 'low', 'medium', or 'high'
+  prompt: 'Analyze this complex scenario in detail',
 });
 ```
 
@@ -174,7 +182,7 @@ Works with any model in your Ollama installation, including:
 
 - **Chat Models**: `llama3.2`, `mistral`, `phi4-mini`, `qwen2.5`, `codellama`, `gemma3`
 - **Vision Models**: `llava`, `llama3.2-vision`, `minicpm-v`
-- **Reasoning Models**: `deepseek-r1:7b`, `deepseek-r1:1.5b`, `deepseek-r1:8b`
+- **Reasoning Models**: `deepseek-r1:7b`, `deepseek-r1:1.5b`, `deepseek-r1:8b`, `gpt-oss:7b`
 - **Code Models**: `codellama:code`, `codellama:python`, `deepseek-coder-v2`
 - **Embedding Models**: `nomic-embed-text`, `all-minilm`, `mxbai-embed-large`
 

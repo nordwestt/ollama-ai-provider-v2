@@ -191,6 +191,53 @@ describe('OllamaResponsesLanguageModel', () => {
 
         expect(result.warnings).toEqual([]);
       });
+
+      it('should handle thinking levels for GPT-OSS models', async () => {
+        const gptOssModel = new OllamaResponsesLanguageModel('gpt-oss:7b', testConfig);
+        prepareJsonResponse(server);
+
+        const result = await gptOssModel.doGenerate({
+          prompt: TEST_PROMPT,
+          providerOptions: {
+            ollama: {
+              think: 'high',
+            },
+          },
+        });
+
+        expect(result.warnings).toEqual([]);
+      });
+
+      it('should convert boolean think to level for GPT-OSS models', async () => {
+        const gptOssModel = new OllamaResponsesLanguageModel('gpt-oss:7b', testConfig);
+        prepareJsonResponse(server);
+
+        const result = await gptOssModel.doGenerate({
+          prompt: TEST_PROMPT,
+          providerOptions: {
+            ollama: {
+              think: true,
+            },
+          },
+        });
+
+        expect(result.warnings).toEqual([]);
+      });
+
+      it('should handle thinking levels for regular models', async () => {
+        prepareJsonResponse(server);
+
+        const result = await model.doGenerate({
+          prompt: TEST_PROMPT,
+          providerOptions: {
+            ollama: {
+              think: 'medium',
+            },
+          },
+        });
+
+        expect(result.warnings).toEqual([]);
+      });
     });
 
     describe('Error Handling', () => {

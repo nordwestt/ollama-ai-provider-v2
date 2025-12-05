@@ -217,9 +217,15 @@ export const ollamaProviderOptions = z.object({
    * the model's thinking from the model's output. When disabled, the model will not think
    * and directly output the content.
    *
-   * Only supported by certain models like DeepSeek R1 and Qwen 3.
+   * For GPT-OSS models: accepts "low", "medium", or "high" to tune trace length.
+   * For other models: accepts boolean true/false.
+   * 
+   * Only supported by certain models like DeepSeek R1, Qwen 3, and GPT-OSS.
    */
-  think: z.boolean().optional(),
+  think: z.union([
+    z.boolean(),
+    z.enum(["low", "medium", "high"])
+  ]).optional(),
   options: z.object({
     num_ctx: z.number().optional(),
     repeat_last_n: z.number().optional(),
@@ -237,3 +243,36 @@ export const ollamaProviderOptions = z.object({
 });
 
 export type OllamaProviderOptions = z.infer<typeof ollamaProviderOptions>;
+
+/**
+ * Validates and normalizes the think parameter based on the model ID.
+ * GPT-OSS models require string levels ("low", "medium", "high").
+ * Other models accept boolean values.
+ */
+export function validateThinkParameter(
+  modelId: string,
+  think: boolean | "low" | "medium" | "high" | undefined
+): boolean | "low" | "medium" | "high" | undefined {
+  if (think === undefined) {
+    return undefined;
+  }
+
+  const isGptOss = modelId.toLowerCase().includes("gpt-oss");
+
+  if (isGptOss) {
+    // GPT-OSS models require string levels
+    if (typeof think === "boolean") {
+      // Convert boolean to appropriate level for GPT-OSS
+      return think ? "medium" : undefined;
+    }
+    // Return the level as-is if it's already a valid string level
+    return think;
+  } else {
+    // Other models accept boolean values
+    if (typeof think === "string") {
+      // Convert string levels to boolean for non-GPT-OSS models
+      return think !== undefined;
+    }
+    return think;
+  }
+}
