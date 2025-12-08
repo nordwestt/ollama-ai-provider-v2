@@ -37,8 +37,8 @@ importers:
         specifier: 5.9.3
         version: 5.9.3
       vite:
-        specifier: ^7.2.4
-        version: 7.2.4(@types/node@24.10.1)
+        specifier: ^7.2.7
+        version: 7.2.7(@types/node@24.10.1)
       vitest:
         specifier: ^4.0.15
         version: 4.0.15(@edge-runtime/vm@5.0.0)(@types/node@24.10.1)(msw@2.12.4(@types/node@24.10.1)(typescript@5.9.3))
@@ -1451,8 +1451,8 @@ packages:
   uri-js@4.4.1:
     resolution: {integrity: sha512-7rKUyy33Q1yc98pQ1DAmLtwX109F7TIfWlW1Ydo8Wl1ii1SeHieeh0HHfPeL2fMXK6z0s8ecKs9frCuLJvndBg==}
 
-  vite@7.2.4:
-    resolution: {integrity: sha512-NL8jTlbo0Tn4dUEXEsUg8KeyG/Lkmc4Fnzb8JXN/Ykm9G4HNImjtABMJgkQoVjOBN/j2WAwDTRytdqJbZsah7w==}
+  vite@7.2.7:
+    resolution: {integrity: sha512-ITcnkFeR3+fI8P1wMgItjGrR10170d8auB4EpMLPqmx6uxElH3a/hHGQabSHKdqd4FXWO1nFIp9rRn7JQ34ACQ==}
     engines: {node: ^20.19.0 || >=22.12.0}
     hasBin: true
     peerDependencies:
@@ -2038,14 +2038,14 @@ snapshots:
       chai: 6.2.1
       tinyrainbow: 3.0.3
 
-  '@vitest/mocker@4.0.15(msw@2.12.4(@types/node@24.10.1)(typescript@5.9.3))(vite@7.2.4(@types/node@24.10.1))':
+  '@vitest/mocker@4.0.15(msw@2.12.4(@types/node@24.10.1)(typescript@5.9.3))(vite@7.2.7(@types/node@24.10.1))':
     dependencies:
       '@vitest/spy': 4.0.15
       estree-walker: 3.0.3
       magic-string: 0.30.21
     optionalDependencies:
       msw: 2.12.4(@types/node@24.10.1)(typescript@5.9.3)
-      vite: 7.2.4(@types/node@24.10.1)
+      vite: 7.2.7(@types/node@24.10.1)
 
   '@vitest/pretty-format@4.0.15':
     dependencies:
@@ -2332,7 +2332,7 @@ snapshots:
     dependencies:
       magic-string: 0.30.21
       mlly: 1.8.0
-      rollup: 4.53.2
+      rollup: 4.53.3
 
   flat-cache@4.0.1:
     dependencies:
@@ -2775,7 +2775,7 @@ snapshots:
     dependencies:
       punycode: 2.3.1
 
-  vite@7.2.4(@types/node@24.10.1):
+  vite@7.2.7(@types/node@24.10.1):
     dependencies:
       esbuild: 0.25.12
       fdir: 6.5.0(picomatch@4.0.3)
@@ -2790,7 +2790,7 @@ snapshots:
   vitest@4.0.15(@edge-runtime/vm@5.0.0)(@types/node@24.10.1)(msw@2.12.4(@types/node@24.10.1)(typescript@5.9.3)):
     dependencies:
       '@vitest/expect': 4.0.15
-      '@vitest/mocker': 4.0.15(msw@2.12.4(@types/node@24.10.1)(typescript@5.9.3))(vite@7.2.4(@types/node@24.10.1))
+      '@vitest/mocker': 4.0.15(msw@2.12.4(@types/node@24.10.1)(typescript@5.9.3))(vite@7.2.7(@types/node@24.10.1))
       '@vitest/pretty-format': 4.0.15
       '@vitest/runner': 4.0.15
       '@vitest/snapshot': 4.0.15
@@ -2807,7 +2807,7 @@ snapshots:
       tinyexec: 1.0.2
       tinyglobby: 0.2.15
       tinyrainbow: 3.0.3
-      vite: 7.2.4(@types/node@24.10.1)
+      vite: 7.2.7(@types/node@24.10.1)
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@edge-runtime/vm': 5.0.0
