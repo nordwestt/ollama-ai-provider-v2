@@ -1,6 +1,13 @@
 import {
-  LanguageModelV2,
-  LanguageModelV2CallWarning,
+  LanguageModelV3,
+  LanguageModelV3CallOptions,
+  LanguageModelV3Content,
+  LanguageModelV3FinishReason,
+  LanguageModelV3StreamPart,
+  LanguageModelV3Usage,
+  SharedV3Warning,
+  SharedV3Headers,
+  LanguageModelV3ResponseMetadata,
 } from "@ai-sdk/provider";
 import {
   combineHeaders,
@@ -21,9 +28,12 @@ import {
 } from "./ollama-responses-processor";
 import { OllamaStreamProcessor } from "./ollama-responses-stream-processor";
 
-export class OllamaResponsesLanguageModel implements LanguageModelV2 {
-  readonly specificationVersion = "v2";
+export class OllamaResponsesLanguageModel implements LanguageModelV3 {
+  readonly specificationVersion = "v3" as const;
   readonly modelId: OllamaChatModelId;
+  readonly provider: string;
+  readonly defaultObjectGenerationMode = undefined;
+  readonly supportsImageUrls = true;
 
   private readonly config: OllamaConfig;
   private readonly requestBuilder: OllamaRequestBuilder;
@@ -32,6 +42,7 @@ export class OllamaResponsesLanguageModel implements LanguageModelV2 {
   constructor(modelId: OllamaChatModelId, config: OllamaConfig) {
     this.modelId = modelId;
     this.config = config;
+    this.provider = config.provider;
     this.requestBuilder = new OllamaRequestBuilder();
     this.responseProcessor = new OllamaResponseProcessor(config);
   }
@@ -42,13 +53,19 @@ export class OllamaResponsesLanguageModel implements LanguageModelV2 {
     ]
   };
 
-  get provider(): string {
-    return this.config.provider;
-  }
-
   async doGenerate(
-    options: Parameters<LanguageModelV2["doGenerate"]>[0],
-  ): Promise<Awaited<ReturnType<LanguageModelV2["doGenerate"]>>> {
+    options: LanguageModelV3CallOptions,
+  ): Promise<{
+    content: Array<LanguageModelV3Content>;
+    finishReason: LanguageModelV3FinishReason;
+    usage: LanguageModelV3Usage;
+    warnings: Array<SharedV3Warning>;
+    request?: { body?: unknown };
+    response?: LanguageModelV3ResponseMetadata & {
+      headers?: SharedV3Headers;
+      body?: unknown;
+    };
+  }> {
     const { args: body, warnings } = await this.prepareRequest(options);
 
     const {
@@ -84,8 +101,16 @@ export class OllamaResponsesLanguageModel implements LanguageModelV2 {
   }
 
   async doStream(
-    options: Parameters<LanguageModelV2["doStream"]>[0],
-  ): Promise<Awaited<ReturnType<LanguageModelV2["doStream"]>>> {
+    options: LanguageModelV3CallOptions,
+  ): Promise<{
+    stream: ReadableStream<LanguageModelV3StreamPart>;
+    warnings: Array<SharedV3Warning>;
+    request?: { body?: unknown };
+    response?: LanguageModelV3ResponseMetadata & {
+      headers?: SharedV3Headers;
+      body?: unknown;
+    };
+  }> {
     const { args: body, warnings } = await this.prepareRequest(options);
 
     const { responseHeaders, value: response } = await postJsonToApi({
@@ -112,7 +137,7 @@ export class OllamaResponsesLanguageModel implements LanguageModelV2 {
     };
   }
 
-  private async prepareRequest(options: Parameters<LanguageModelV2["doGenerate"]>[0]) {
+  private async prepareRequest(options: LanguageModelV3CallOptions) {
     return await this.requestBuilder.buildRequest({
       modelId: this.modelId,
       ...options,

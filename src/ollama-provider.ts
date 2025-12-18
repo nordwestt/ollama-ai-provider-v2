@@ -1,7 +1,7 @@
 import {
-  EmbeddingModelV2,
-  LanguageModelV2,
-  ProviderV2,
+  EmbeddingModelV3,
+  LanguageModelV3,
+  ProviderV3,
   NoSuchModelError,
 } from '@ai-sdk/provider';
 import {
@@ -21,13 +21,13 @@ import {
 } from './embedding/ollama-embedding-settings';
 import { OllamaResponsesLanguageModel } from './responses/ollama-responses-language-model';
 
-export interface OllamaProvider extends ProviderV2 {
-  (modelId: OllamaChatModelId): LanguageModelV2;
+export interface OllamaProvider extends ProviderV3 {
+  (modelId: OllamaChatModelId): LanguageModelV3;
 
   /**
 Creates an Ollama model for text generation.
    */
-  languageModel(modelId: OllamaChatModelId): LanguageModelV2;
+  languageModel(modelId: OllamaChatModelId): LanguageModelV3;
 
   /**
 Creates an Ollama chat model for text generation.
@@ -35,7 +35,7 @@ Creates an Ollama chat model for text generation.
   chat(
     modelId: OllamaChatModelId,
     settings?: OllamaProviderOptions,
-  ): LanguageModelV2;
+  ): LanguageModelV3;
 
   /**
 Creates an Ollama completion model for text generation.
@@ -43,7 +43,7 @@ Creates an Ollama completion model for text generation.
   completion(
     modelId: OllamaCompletionModelId,
     settings?: OllamaCompletionSettings,
-  ): LanguageModelV2;
+  ): LanguageModelV3;
 
   /**
 Creates a model for text embeddings.
@@ -51,7 +51,7 @@ Creates a model for text embeddings.
   embedding(
     modelId: OllamaEmbeddingModelId,
     settings?: OllamaEmbeddingSettings,
-  ): EmbeddingModelV2<string>;
+  ): EmbeddingModelV3;
 
   /**
 Creates a model for text embeddings.
@@ -61,7 +61,7 @@ Creates a model for text embeddings.
   textEmbedding(
     modelId: OllamaEmbeddingModelId,
     settings?: OllamaEmbeddingSettings,
-  ): EmbeddingModelV2<string>;
+  ): EmbeddingModelV3;
 
   /**
 Creates a model for text embeddings.
@@ -69,7 +69,7 @@ Creates a model for text embeddings.
   textEmbeddingModel(
     modelId: OllamaEmbeddingModelId,
     settings?: OllamaEmbeddingSettings,
-  ): EmbeddingModelV2<string>;
+  ): EmbeddingModelV3;
 
 }
 
@@ -176,12 +176,14 @@ export function createOllama(
     return createLanguageModel(modelId);
   };
 
+  provider.specificationVersion = 'v3' as const;
   provider.languageModel = createLanguageModel;
   provider.chat = createLanguageModel;
   provider.completion = createCompletionModel;
   provider.embedding = createEmbeddingModel;
   provider.textEmbedding = createEmbeddingModel;
   provider.textEmbeddingModel = createEmbeddingModel;
+  provider.embeddingModel = createEmbeddingModel;
   provider.imageModel = (modelId: string) => {
     throw new NoSuchModelError({
       modelId,

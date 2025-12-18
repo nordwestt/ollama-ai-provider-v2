@@ -1,8 +1,8 @@
 import {
   InvalidResponseDataError,
-  LanguageModelV2FinishReason,
-  LanguageModelV2StreamPart,
-  LanguageModelV2Usage,
+  LanguageModelV3FinishReason,
+  LanguageModelV3StreamPart,
+  LanguageModelV3Usage,
 } from "@ai-sdk/provider";
 import { generateId, ParseResult } from "@ai-sdk/provider-utils";
 import { z } from "zod/v4";
@@ -16,8 +16,8 @@ import {
 } from "./ollama-responses-processor";
 
 interface StreamState {
-  finishReason: LanguageModelV2FinishReason;
-  usage: LanguageModelV2Usage;
+  finishReason: LanguageModelV3FinishReason;
+  usage: LanguageModelV3Usage;
   responseId: string | null;
   ongoingToolCalls: Record<number, { toolName: string; toolCallId: string } | undefined>;
   hasToolCalls: boolean;
@@ -27,6 +27,7 @@ interface StreamState {
   textEnded: boolean;
   reasoningEnded: boolean;
   textId: string;
+  reasoningId: string;
 }
 
 export class OllamaStreamProcessor {
@@ -38,13 +39,9 @@ export class OllamaStreamProcessor {
 
   createTransformStream(warnings: any[], options: any): TransformStream<
     ParseResult<z.infer<typeof baseOllamaResponseSchema>>,
-    LanguageModelV2StreamPart
+    LanguageModelV3StreamPart
   > {
     return new TransformStream({
-      start: (controller) => {
-        controller.enqueue({ type: "stream-start", warnings });
-      },
-
       transform: (chunk, controller) => {
         this.processChunk(chunk, controller, options);
       },
@@ -59,9 +56,17 @@ export class OllamaStreamProcessor {
     return {
       finishReason: "unknown",
       usage: {
-        inputTokens: undefined,
-        outputTokens: undefined,
-        totalTokens: undefined,
+        inputTokens: {
+          total: undefined,
+          noCache: undefined,
+          cacheRead: undefined,
+          cacheWrite: undefined,
+        },
+        outputTokens: {
+          total: undefined,
+          text: undefined,
+          reasoning: undefined,
+        },
       },
       responseId: null,
       ongoingToolCalls: {},
@@ -72,12 +77,13 @@ export class OllamaStreamProcessor {
       textEnded: false,
       reasoningEnded: false,
       textId: generateId(),
+      reasoningId: generateId(),
     };
   }
 
   private processChunk(
     chunk: ParseResult<z.infer<typeof baseOllamaResponseSchema>>,
-    controller: TransformStreamDefaultController<LanguageModelV2StreamPart>,
+    controller: TransformStreamDefaultController<LanguageModelV3StreamPart>,
     options: any,
   ) {
     if ((options as any)?.includeRawChunks) {
@@ -101,7 +107,7 @@ export class OllamaStreamProcessor {
 
   private processResponseValue(
     value: OllamaResponse,
-    controller: TransformStreamDefaultController<LanguageModelV2StreamPart>,
+    controller: TransformStreamDefaultController<LanguageModelV3StreamPart>,
   ) {
     // Handle error-like chunks
     if ((value as any) && typeof (value as any) === "object" && "error" in (value as any)) {
@@ -130,13 +136,21 @@ export class OllamaStreamProcessor {
 
   private handleDoneChunk(
     value: OllamaResponse,
-    controller: TransformStreamDefaultController<LanguageModelV2StreamPart>,
+    controller: TransformStreamDefaultController<LanguageModelV3StreamPart>,
   ) {
     this.state.finishReason = mapOllamaFinishReason(value.done_reason);
     this.state.usage = {
-      inputTokens: value.prompt_eval_count || 0,
-      outputTokens: value.eval_count ?? undefined,
-      totalTokens: (value.prompt_eval_count ?? 0) + (value.eval_count ?? 0),
+      inputTokens: {
+        total: value.prompt_eval_count || 0,
+        noCache: undefined,
+        cacheRead: undefined,
+        cacheWrite: undefined,
+      },
+      outputTokens: {
+        total: value.eval_count || 0,
+        text: undefined,
+        reasoning: undefined,
+      },
     };
 
     // Close any started streams
@@ -145,14 +159,14 @@ export class OllamaStreamProcessor {
       this.state.textEnded = true;
     }
     if (this.state.hasReasoningStarted && !this.state.reasoningEnded) {
-      controller.enqueue({ type: "reasoning-end", id: "0" });
+      controller.enqueue({ type: "reasoning-end", id: this.state.reasoningId });
       this.state.reasoningEnded = true;
     }
   }
 
   private processDelta(
     delta: OllamaResponse["message"],
-    controller: TransformStreamDefaultController<LanguageModelV2StreamPart>,
+    controller: TransformStreamDefaultController<LanguageModelV3StreamPart>,
   ) {
     this.processTextContent(delta, controller);
     this.processThinking(delta, controller);
@@ -161,7 +175,7 @@ export class OllamaStreamProcessor {
 
   private processTextContent(
     delta: OllamaResponse["message"],
-    controller: TransformStreamDefaultController<LanguageModelV2StreamPart>,
+    controller: TransformStreamDefaultController<LanguageModelV3StreamPart>,
   ) {
     if (delta?.content != null) {
       if (!this.state.hasTextStarted) {
@@ -178,16 +192,16 @@ export class OllamaStreamProcessor {
 
   private processThinking(
     delta: OllamaResponse["message"],
-    controller: TransformStreamDefaultController<LanguageModelV2StreamPart>,
+    controller: TransformStreamDefaultController<LanguageModelV3StreamPart>,
   ) {
     if (delta?.thinking) {
       if (!this.state.hasReasoningStarted) {
-        controller.enqueue({ type: "reasoning-start", id: "0" });
+        controller.enqueue({ type: "reasoning-start", id: this.state.reasoningId });
         this.state.hasReasoningStarted = true;
       }
       controller.enqueue({
         type: "reasoning-delta",
-        id: "0",
+        id: this.state.reasoningId,
         delta: delta.thinking,
       });
     }
@@ -195,7 +209,7 @@ export class OllamaStreamProcessor {
 
   private processToolCalls(
     delta: OllamaResponse["message"],
-    controller: TransformStreamDefaultController<LanguageModelV2StreamPart>,
+    controller: TransformStreamDefaultController<LanguageModelV3StreamPart>,
   ) {
     for (const toolCall of delta.tool_calls ?? []) {
       if (toolCall.function?.name == null) {
@@ -216,7 +230,7 @@ export class OllamaStreamProcessor {
 
   private emitToolCall(
     toolCall: NonNullable<OllamaResponse["message"]["tool_calls"]>[0],
-    controller: TransformStreamDefaultController<LanguageModelV2StreamPart>,
+    controller: TransformStreamDefaultController<LanguageModelV3StreamPart>,
   ) {
     const id = toolCall.id ?? (this.config.generateId?.() ?? generateId());
 
@@ -248,14 +262,14 @@ export class OllamaStreamProcessor {
   }
 
   private finalizeStream(
-    controller: TransformStreamDefaultController<LanguageModelV2StreamPart>,
+    controller: TransformStreamDefaultController<LanguageModelV3StreamPart>,
   ) {
     // Ensure any started segments are properly closed
     if (this.state.hasTextStarted && !this.state.textEnded) {
-      controller.enqueue({ type: "text-end", id: "0" });
+      controller.enqueue({ type: "text-end", id: this.state.textId });
     }
     if (this.state.hasReasoningStarted && !this.state.reasoningEnded) {
-      controller.enqueue({ type: "reasoning-end", id: "0" });
+      controller.enqueue({ type: "reasoning-end", id: this.state.reasoningId });
     }
 
     controller.enqueue({

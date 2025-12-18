@@ -1,8 +1,8 @@
 import {
-  LanguageModelV2Content,
-  LanguageModelV2FinishReason,
-  LanguageModelV2Usage,
-  SharedV2ProviderMetadata,
+  LanguageModelV3Content,
+  LanguageModelV3FinishReason,
+  LanguageModelV3Usage,
+  SharedV3ProviderMetadata,
 } from "@ai-sdk/provider";
 import { generateId } from "@ai-sdk/provider-utils";
 import { z } from "zod/v4";
@@ -46,15 +46,15 @@ export class OllamaResponseProcessor {
   constructor(private config: OllamaConfig) {}
 
   processGenerateResponse(response: OllamaResponse): {
-    content: LanguageModelV2Content[];
-    finishReason: LanguageModelV2FinishReason;
-    usage: LanguageModelV2Usage;
-    providerMetadata: SharedV2ProviderMetadata;
+    content: LanguageModelV3Content[];
+    finishReason: LanguageModelV3FinishReason;
+    usage: LanguageModelV3Usage;
+    providerMetadata: SharedV3ProviderMetadata;
   } {
     const content = this.extractContent(response);
     const finishReason = mapOllamaFinishReason(response.done_reason);
     const usage = this.extractUsage(response);
-    const providerMetadata: SharedV2ProviderMetadata = { ollama: {} };
+    const providerMetadata: SharedV3ProviderMetadata = { ollama: {} };
 
     return {
       content,
@@ -64,8 +64,8 @@ export class OllamaResponseProcessor {
     };
   }
 
-  private extractContent(response: OllamaResponse): LanguageModelV2Content[] {
-    const content: LanguageModelV2Content[] = [];
+  private extractContent(response: OllamaResponse): LanguageModelV3Content[] {
+    const content: LanguageModelV3Content[] = [];
 
     // Add text content
     const text = response.message.content;
@@ -98,13 +98,19 @@ export class OllamaResponseProcessor {
     return content;
   }
 
-  private extractUsage(response: OllamaResponse): LanguageModelV2Usage {
+  private extractUsage(response: OllamaResponse): LanguageModelV3Usage {
     return {
-      inputTokens: response.prompt_eval_count ?? undefined,
-      outputTokens: response.eval_count ?? undefined,
-      totalTokens: (response.prompt_eval_count ?? 0) + (response.eval_count ?? 0),
-      reasoningTokens: undefined, // Ollama doesn't provide separate reasoning tokens
-      cachedInputTokens: undefined,
+      inputTokens: {
+        total: response.prompt_eval_count ?? 0,
+        noCache: undefined,
+        cacheRead: undefined,
+        cacheWrite: undefined,
+      },
+      outputTokens: {
+        total: response.eval_count ?? 0,
+        text: undefined,
+        reasoning: undefined,
+      },
     };
   }
 }
