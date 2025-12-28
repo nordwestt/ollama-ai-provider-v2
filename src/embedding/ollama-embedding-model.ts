@@ -71,10 +71,12 @@ export class OllamaEmbeddingModel implements EmbeddingModelV3 {
     values,
     headers,
     abortSignal,
+    providerOptions,
   }: {
     values: Array<string>;
     headers?: Record<string, string | undefined>;
     abortSignal?: AbortSignal;
+    providerOptions?: Record<string, Record<string, unknown>>;
   }): Promise<{
     embeddings: Array<Array<number>>;
     usage?: { tokens: number };
@@ -94,7 +96,25 @@ export class OllamaEmbeddingModel implements EmbeddingModelV3 {
       });
     }
 
-    const body = this.getArgs({values})
+    const ollamaOptions = await parseProviderOptions({
+      provider: 'ollama',
+      providerOptions,
+      schema: ollamaEmbeddingProviderOptions,
+    });
+
+    // Build body with explicit undefined filtering
+    const dimensions = ollamaOptions?.dimensions ?? this.settings.dimensions;
+    const truncate = ollamaOptions?.truncate ?? this.settings.truncate;
+    const keepAlive = ollamaOptions?.keepAlive ?? this.settings.keepAlive;
+
+    const body: Record<string, unknown> = {
+      model: this.modelId,
+      input: values,
+    };
+
+    if (dimensions !== undefined) body.dimensions = dimensions;
+    if (truncate !== undefined) body.truncate = truncate;
+    if (keepAlive !== undefined) body.keep_alive = keepAlive;
 
     const {
       responseHeaders,

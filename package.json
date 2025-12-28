@@ -37,14 +37,14 @@
     }
   },
   "dependencies": {
-    "@ai-sdk/provider": "^3.0.0-beta.27",
-    "@ai-sdk/provider-utils": "^3.0.19"
+    "@ai-sdk/provider": "^3.0.0",
+    "@ai-sdk/provider-utils": "^4.0.1"
   },
   "devDependencies": {
     "@edge-runtime/vm": "^5.0.0",
     "@types/node": "24.10.1",
     "@vercel/ai-tsconfig": "./tsconfig",
-    "ai": "^6.0.0-beta.159",
+    "ai": "^6.0.3",
     "eslint": "^9.39.1",
     "msw": "^2.12.4",
     "tsup": "^8",

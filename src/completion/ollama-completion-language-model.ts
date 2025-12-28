@@ -1,12 +1,12 @@
 import {
   combineHeaders,
   createJsonResponseHandler,
-  createJsonStreamResponseHandler,
   generateId,
   parseProviderOptions,
   ParseResult,
   postJsonToApi,
 } from "@ai-sdk/provider-utils";
+import { createNdjsonStreamResponseHandler } from "../common/ndjson-stream-handler";
 import { z } from "zod/v4";
 import {
   InvalidPromptError,
@@ -238,7 +238,7 @@ export class OllamaCompletionLanguageModel implements LanguageModelV3 {
       headers: combineHeaders(this.config.headers(), options.headers),
       body,
       failedResponseHandler: ollamaFailedResponseHandler as any,
-      successfulResponseHandler: createJsonStreamResponseHandler(
+      successfulResponseHandler: createNdjsonStreamResponseHandler(
         baseOllamaResponseSchema,
       ),
       abortSignal: options.abortSignal,

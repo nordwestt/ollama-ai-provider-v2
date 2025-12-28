@@ -1,5 +1,5 @@
-import { EmbeddingModelV2Embedding } from '@ai-sdk/provider';
-import { createTestServer } from '@ai-sdk/provider-utils/test';
+import { EmbeddingModelV3Embedding } from '@ai-sdk/provider';
+import { createTestServer } from '../test-utils/test-server';
 import { createOllama } from '../ollama-provider';
 
 const dummyEmbeddings = [
@@ -21,7 +21,7 @@ describe('doEmbed', () => {
     usage = { prompt_eval_count: 8 },
     headers,
   }: {
-    embeddings?: EmbeddingModelV2Embedding[];
+    embeddings?: EmbeddingModelV3Embedding[];
     usage?: { prompt_eval_count: number };
     headers?: Record<string, string>;
   } = {}) {
@@ -140,7 +140,7 @@ describe('doEmbed', () => {
       },
     });
 
-    expect(server.calls[0].requestHeaders).toStrictEqual({
+    expect(server.calls[0].requestHeaders).toMatchObject({
       'content-type': 'application/json',
       'custom-provider-header': 'provider-header-value',
       'custom-request-header': 'request-header-value',

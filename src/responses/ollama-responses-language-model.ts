@@ -12,9 +12,9 @@ import {
 import {
   combineHeaders,
   createJsonResponseHandler,
-  createJsonStreamResponseHandler,
   postJsonToApi,
 } from "@ai-sdk/provider-utils";
+import { createNdjsonStreamResponseHandler } from "../common/ndjson-stream-handler";
 import { OllamaConfig } from "../common/ollama-config";
 import { ollamaFailedResponseHandler } from "../completion/ollama-error";
 import { OllamaChatModelId } from "../ollama-chat-settings";
@@ -121,7 +121,7 @@ export class OllamaResponsesLanguageModel implements LanguageModelV3 {
       headers: combineHeaders(this.config.headers(), options.headers),
       body: { ...body, stream: true },
       failedResponseHandler: ollamaFailedResponseHandler,
-      successfulResponseHandler: createJsonStreamResponseHandler(baseOllamaResponseSchema),
+      successfulResponseHandler: createNdjsonStreamResponseHandler(baseOllamaResponseSchema),
       abortSignal: options.abortSignal,
       fetch: this.config.fetch,
     });

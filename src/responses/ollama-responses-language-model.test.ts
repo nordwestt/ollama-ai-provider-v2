@@ -17,7 +17,7 @@ describe('OllamaResponsesLanguageModel', () => {
 
   describe('Model Properties', () => {
     it('should have correct specification version', () => {
-      expect(model.specificationVersion).toBe('v2');
+      expect(model.specificationVersion).toBe('v3');
     });
 
     it('should have correct model ID', () => {
@@ -49,11 +49,17 @@ describe('OllamaResponsesLanguageModel', () => {
         ]);
         expect(result.finishReason).toBe('stop');
         expect(result.usage).toEqual({
-          inputTokens: 10,
-          outputTokens: 20,
-          totalTokens: 30,
-          reasoningTokens: undefined,
-          cachedInputTokens: undefined,
+          inputTokens: {
+            total: 10,
+            noCache: undefined,
+            cacheRead: undefined,
+            cacheWrite: undefined,
+          },
+          outputTokens: {
+            total: 20,
+            text: undefined,
+            reasoning: undefined,
+          },
         });
       });
 
