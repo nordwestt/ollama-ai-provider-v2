@@ -1,7 +1,7 @@
 import { LanguageModelV3FinishReason } from '@ai-sdk/provider';
 
 export function mapOllamaFinishReason(
-  finishReason: string | null | undefined,
+  finishReason: string | undefined,
 ): LanguageModelV3FinishReason {
   switch (finishReason) {
     case 'stop':
