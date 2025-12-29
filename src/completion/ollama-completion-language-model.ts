@@ -247,7 +247,7 @@ export class OllamaCompletionLanguageModel implements LanguageModelV3 {
 
     const { prompt: rawPrompt, ...rawSettings } = args;
 
-    let finishReason: LanguageModelV3FinishReason = "unknown";
+    let finishReason = "other";
     let usage: LanguageModelV3Usage = {
       inputTokens: {
         total: undefined,
@@ -298,7 +298,7 @@ export class OllamaCompletionLanguageModel implements LanguageModelV3 {
             }
 
             if (value.done) {
-              finishReason = mapOllamaFinishReason("stop");
+              finishReason = "stop";
             }
 
             if (value.response != null) {
@@ -326,7 +326,7 @@ export class OllamaCompletionLanguageModel implements LanguageModelV3 {
             }
             controller.enqueue({
               type: "finish",
-              finishReason,
+              finishReason: mapOllamaFinishReason(finishReason),
               usage,
             });
           },
