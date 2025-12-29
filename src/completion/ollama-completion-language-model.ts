@@ -1,32 +1,28 @@
 import {
-  combineHeaders,
-  createJsonResponseHandler,
-  generateId,
-  parseProviderOptions,
-  ParseResult,
-  postJsonToApi,
-} from "@ai-sdk/provider-utils";
-import { createNdjsonStreamResponseHandler } from "../common/ndjson-stream-handler";
-import { z } from "zod/v4";
-import {
-  InvalidPromptError,
   LanguageModelV3,
   LanguageModelV3CallOptions,
   LanguageModelV3Content,
   LanguageModelV3FinishReason,
-  LanguageModelV3StreamPart,
-  LanguageModelV3Usage,
-  SharedV3ProviderMetadata,
-  SharedV3Warning,
-  SharedV3Headers,
   LanguageModelV3ResponseMetadata,
+  LanguageModelV3StreamPart,
+  LanguageModelV3StreamResult,
+  LanguageModelV3Usage,
+  SharedV3Headers,
+  SharedV3Warning
 } from "@ai-sdk/provider";
-import { OllamaConfig } from "../common/ollama-config";
-import { ollamaFailedResponseHandler } from "./ollama-error";
+import {
+  combineHeaders,
+  createJsonResponseHandler,
+  generateId,
+  postJsonToApi
+} from "@ai-sdk/provider-utils";
+import { z } from "zod/v4";
 import { convertToOllamaCompletionPrompt } from "../adaptors/convert-to-ollama-completion-prompt";
-import { OllamaCompletionModelId, OllamaCompletionSettings } from "./ollama-completion-settings";
 import { mapOllamaFinishReason } from "../adaptors/map-ollama-finish-reason";
 import { getResponseMetadata } from "../common/get-response-metadata";
+import { createNdjsonStreamResponseHandler } from "../common/ndjson-stream-handler";
+import { OllamaCompletionModelId, OllamaCompletionSettings } from "./ollama-completion-settings";
+import { ollamaFailedResponseHandler } from "./ollama-error";
 
 // Completion-specific provider options schema
 const ollamaCompletionProviderOptions = z.object({
@@ -214,15 +210,7 @@ export class OllamaCompletionLanguageModel implements LanguageModelV3 {
 
   async doStream(
     options: LanguageModelV3CallOptions,
-  ): Promise<{
-    stream: ReadableStream<LanguageModelV3StreamPart>;
-    warnings: Array<SharedV3Warning>;
-    request?: { body?: unknown };
-    response?: LanguageModelV3ResponseMetadata & {
-      headers?: SharedV3Headers;
-      body?: unknown;
-    };
-  }> {
+  ): Promise<LanguageModelV3StreamResult & {warnings: Array<SharedV3Warning>}> {
     const { args, warnings } = this.getArgs(options);
 
     const body = {
@@ -268,18 +256,12 @@ export class OllamaCompletionLanguageModel implements LanguageModelV3 {
     return {
       stream: response.pipeThrough(
         new TransformStream<
-          ParseResult<z.infer<typeof baseOllamaResponseSchema>>,
+          z.infer<typeof baseOllamaResponseSchema>,
           LanguageModelV3StreamPart
         >({
           transform(chunk, controller) {
-            // handle failed chunk parsing / validation:
-            if (!chunk.success) {
-              finishReason = "error";
-              controller.enqueue({ type: "error", error: (chunk as any).error });
-              return;
-            }
-
-            const value = chunk.value;
+            
+            const value = chunk;
 
             // handle error chunks:
             if ("error" in value) {
@@ -334,7 +316,7 @@ export class OllamaCompletionLanguageModel implements LanguageModelV3 {
       ),
       request: { body: JSON.stringify(body) },
       response: { headers: responseHeaders },
-      warnings,
+      warnings: warnings
     };
   }
 }
@@ -355,3 +337,5 @@ const baseOllamaResponseSchema = z.object({
   prompt_eval_count: z.number().optional(),
   prompt_eval_duration: z.number().optional(),
 });
+
+
