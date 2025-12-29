@@ -26,4 +26,14 @@ A unique identifier representing your end-user, which can help Ollama to
 monitor and detect abuse. Learn more.
 */
   user?: string;
+
+  /**
+Whether to truncate input text to fit within model's context length.
+   */
+  truncate?: boolean;
+
+  /**
+How long to keep the model loaded in memory (e.g., "5m" for 5 minutes).
+   */
+  keepAlive?: string;
 }

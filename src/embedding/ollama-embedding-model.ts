@@ -1,6 +1,9 @@
 import {
-  EmbeddingModelV2,
+  EmbeddingModelV3,
   TooManyEmbeddingValuesForCallError,
+  SharedV3Warning,
+  SharedV3Headers,
+  SharedV3ProviderMetadata,
 } from "@ai-sdk/provider";
 import {
   combineHeaders,
@@ -24,24 +27,15 @@ const ollamaEmbeddingProviderOptions = z.object({
 
 export type OllamaEmbeddingProviderOptions = z.infer<typeof ollamaEmbeddingProviderOptions>;
 
-export class OllamaEmbeddingModel implements EmbeddingModelV2<string> {
-  readonly specificationVersion = "v2";
+export class OllamaEmbeddingModel implements EmbeddingModelV3 {
+  readonly specificationVersion = "v3" as const;
   readonly modelId: OllamaEmbeddingModelId;
+  readonly provider: string;
+  readonly maxEmbeddingsPerCall: number | undefined;
+  readonly supportsParallelCalls: boolean;
 
   private readonly config: OllamaConfig;
   private readonly settings: OllamaEmbeddingSettings;
-
-  get provider(): string {
-    return this.config.provider;
-  }
-
-  get maxEmbeddingsPerCall(): number {
-    return this.settings.maxEmbeddingsPerCall ?? 2048;
-  }
-
-  get supportsParallelCalls(): boolean {
-    return this.settings.supportsParallelCalls ?? true;
-  }
 
   constructor(
     modelId: OllamaEmbeddingModelId,
@@ -51,31 +45,25 @@ export class OllamaEmbeddingModel implements EmbeddingModelV2<string> {
     this.modelId = modelId;
     this.settings = settings;
     this.config = config;
+    this.provider = config.provider;
+    this.maxEmbeddingsPerCall = settings.maxEmbeddingsPerCall ?? 2048;
+    this.supportsParallelCalls = settings.supportsParallelCalls ?? true;
   }
 
-  private async getArgs({
+  private getArgs({
     values,
-    providerOptions,
-  }: Parameters<EmbeddingModelV2<string>["doEmbed"]>[0]) {
-    // Parse provider options
-    const ollamaOptions =
-      (await parseProviderOptions({
-        provider: "ollama",
-        providerOptions,
-        schema: ollamaEmbeddingProviderOptions,
-      })) ?? {};
-
+  }: {
+    values: Array<string>;
+  }) {
     return {
-      args: {
-        // model id:
-        model: this.modelId,
-        input: values,
+      // model id:
+      model: this.modelId,
+      input: values,
 
-        // advanced parameters:
-        dimensions: ollamaOptions.dimensions ?? this.settings.dimensions,
-        truncate: ollamaOptions.truncate,
-        keep_alive: ollamaOptions.keepAlive,
-      }
+      // advanced parameters:
+      dimensions: this.settings.dimensions,
+      truncate: this.settings.truncate,
+      keep_alive: this.settings.keepAlive,
     };
   }
 
@@ -84,10 +72,22 @@ export class OllamaEmbeddingModel implements EmbeddingModelV2<string> {
     headers,
     abortSignal,
     providerOptions,
-  }: Parameters<EmbeddingModelV2<string>["doEmbed"]>[0]): Promise<
-    Awaited<ReturnType<EmbeddingModelV2<string>["doEmbed"]>>
-  > {
-    if (values.length > this.maxEmbeddingsPerCall) {
+  }: {
+    values: Array<string>;
+    headers?: Record<string, string | undefined>;
+    abortSignal?: AbortSignal;
+    providerOptions?: Record<string, Record<string, unknown>>;
+  }): Promise<{
+    embeddings: Array<Array<number>>;
+    usage?: { tokens: number };
+    providerMetadata?: SharedV3ProviderMetadata;
+    response?: {
+      headers?: SharedV3Headers;
+      body?: unknown;
+    };
+    warnings: Array<SharedV3Warning>;
+  }> {
+    if (this.maxEmbeddingsPerCall && values.length > this.maxEmbeddingsPerCall) {
       throw new TooManyEmbeddingValuesForCallError({
         provider: this.provider,
         modelId: this.modelId,
@@ -96,7 +96,25 @@ export class OllamaEmbeddingModel implements EmbeddingModelV2<string> {
       });
     }
 
-    const { args: body } = await this.getArgs({values, providerOptions})
+    const ollamaOptions = await parseProviderOptions({
+      provider: 'ollama',
+      providerOptions,
+      schema: ollamaEmbeddingProviderOptions,
+    });
+
+    // Build body with explicit undefined filtering
+    const dimensions = ollamaOptions?.dimensions ?? this.settings.dimensions;
+    const truncate = ollamaOptions?.truncate ?? this.settings.truncate;
+    const keepAlive = ollamaOptions?.keepAlive ?? this.settings.keepAlive;
+
+    const body: Record<string, unknown> = {
+      model: this.modelId,
+      input: values,
+    };
+
+    if (dimensions !== undefined) body.dimensions = dimensions;
+    if (truncate !== undefined) body.truncate = truncate;
+    if (keepAlive !== undefined) body.keep_alive = keepAlive;
 
     const {
       responseHeaders,
@@ -109,7 +127,7 @@ export class OllamaEmbeddingModel implements EmbeddingModelV2<string> {
       }),
       headers: combineHeaders(this.config.headers(), headers),
       body: { ...body },
-      failedResponseHandler: ollamaFailedResponseHandler,
+      failedResponseHandler: ollamaFailedResponseHandler as any,
       successfulResponseHandler: createJsonResponseHandler(
         ollamaTextEmbeddingResponseSchema,
       ),
@@ -117,10 +135,13 @@ export class OllamaEmbeddingModel implements EmbeddingModelV2<string> {
       fetch: this.config.fetch,
     });
 
+    const typedResponse = response as z.infer<typeof ollamaTextEmbeddingResponseSchema>;
+
     return {
-      embeddings: response.embeddings.map((item) => item),
-      usage: { tokens: response.prompt_eval_count },
+      embeddings: typedResponse.embeddings.map((item: number[]) => item),
+      usage: { tokens: typedResponse.prompt_eval_count },
       response: { headers: responseHeaders, body: rawValue },
+      warnings: [],
     };
   }
 }

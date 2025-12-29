@@ -1,16 +1,16 @@
 import {
-  LanguageModelV2FunctionTool,
-  LanguageModelV2Prompt,
+  LanguageModelV3FunctionTool,
+  LanguageModelV3Prompt,
 } from '@ai-sdk/provider';
-import { createTestServer } from '@ai-sdk/provider-utils/test';
+import { createTestServer } from '../../test-utils/test-server';
 import { OllamaChatModelId } from '../../ollama-chat-settings';
 import { OllamaConfig } from '../../common/ollama-config';
 
-export const TEST_PROMPT: LanguageModelV2Prompt = [
+export const TEST_PROMPT: LanguageModelV3Prompt = [
   { role: 'user', content: [{ type: 'text', text: 'Hello' }] },
 ];
 
-export const TEST_TOOLS: Array<LanguageModelV2FunctionTool> = [
+export const TEST_TOOLS: Array<LanguageModelV3FunctionTool> = [
   {
     type: 'function',
     name: 'weather',

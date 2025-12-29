@@ -1,9 +1,9 @@
 import {
-    LanguageModelV2CallWarning,
-    LanguageModelV2Prompt,
-    UnsupportedFunctionalityError,
-  } from '@ai-sdk/provider';
-  import { OllamaResponsesPrompt } from './ollama-responses-api-types';
+  LanguageModelV2Prompt,
+  SharedV3Warning,
+  UnsupportedFunctionalityError
+} from '@ai-sdk/provider';
+import { OllamaResponsesPrompt } from './ollama-responses-api-types';
   
   export function convertToOllamaResponsesMessages({
     prompt,
@@ -13,10 +13,10 @@ import {
     systemMessageMode: 'system' | 'developer' | 'remove';
   }): {
     messages: OllamaResponsesPrompt;
-    warnings: Array<LanguageModelV2CallWarning>;
+    warnings: Array<SharedV3Warning>;
   } {
     const messages: OllamaResponsesPrompt = [];
-    const warnings: Array<LanguageModelV2CallWarning> = [];
+    const warnings: Array<SharedV3Warning> = [];
   
     for (const { role, content } of prompt) {
       switch (role) {

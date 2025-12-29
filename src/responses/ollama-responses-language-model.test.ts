@@ -1,12 +1,12 @@
 import { OllamaResponsesLanguageModel } from './ollama-responses-language-model';
 import {
+  TEST_MODEL_ID,
   TEST_PROMPT,
   TEST_TOOLS,
-  TEST_MODEL_ID,
-  createTestConfig,
   createMockServer,
-  prepareJsonResponse,
+  createTestConfig,
   prepareErrorResponse,
+  prepareJsonResponse,
   prepareStreamResponse,
 } from './test-helpers/ollama-test-helpers';
 
@@ -17,7 +17,7 @@ describe('OllamaResponsesLanguageModel', () => {
 
   describe('Model Properties', () => {
     it('should have correct specification version', () => {
-      expect(model.specificationVersion).toBe('v2');
+      expect(model.specificationVersion).toBe('v3');
     });
 
     it('should have correct model ID', () => {
@@ -47,13 +47,20 @@ describe('OllamaResponsesLanguageModel', () => {
         expect(result.content).toEqual([
           { type: 'text', text: 'Hello, how can I help you?' },
         ]);
-        expect(result.finishReason).toBe('stop');
+        expect(result.finishReason).toEqual({raw: 'stop', unified: 'stop'}
+        );
         expect(result.usage).toEqual({
-          inputTokens: 10,
-          outputTokens: 20,
-          totalTokens: 30,
-          reasoningTokens: undefined,
-          cachedInputTokens: undefined,
+          inputTokens: {
+            total: 10,
+            noCache: undefined,
+            cacheRead: undefined,
+            cacheWrite: undefined,
+          },
+          outputTokens: {
+            total: 20,
+            text: undefined,
+            reasoning: undefined,
+          },
         });
       });
 
@@ -145,11 +152,11 @@ describe('OllamaResponsesLanguageModel', () => {
         });
 
         expect(result.warnings).toEqual([
-          { type: 'unsupported-setting', setting: 'topK' },
-          { type: 'unsupported-setting', setting: 'seed' },
-          { type: 'unsupported-setting', setting: 'presencePenalty' },
-          { type: 'unsupported-setting', setting: 'frequencyPenalty' },
-          { type: 'unsupported-setting', setting: 'stopSequences' },
+          { type: 'unsupported', feature: 'setting', details: 'topK' },
+          { type: 'unsupported', feature: 'setting', details: 'seed' },
+          { type: 'unsupported', feature: 'setting', details: 'presencePenalty' },
+          { type: 'unsupported', feature: 'setting', details: 'frequencyPenalty' },
+          { type: 'unsupported', feature: 'setting', details: 'stopSequences' },
         ]);
       });
 

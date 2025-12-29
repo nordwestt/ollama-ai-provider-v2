@@ -1,13 +1,12 @@
 import {
-  LanguageModelV2CallWarning,
-  LanguageModelV2,
+  SharedV3Warning
 } from "@ai-sdk/provider";
 import { parseProviderOptions } from "@ai-sdk/provider-utils";
 import { z } from "zod/v4";
-import { convertToOllamaResponsesMessages } from "./convert-to-ollama-responses-messages";
 import { convertToOllamaChatMessages } from "../adaptors/convert-to-ollama-chat-messages";
-import { prepareResponsesTools } from "./ollama-responses-prepare-tools";
 import { OllamaChatModelId, ollamaProviderOptions } from "../ollama-chat-settings";
+import { convertToOllamaResponsesMessages } from "./convert-to-ollama-responses-messages";
+import { prepareResponsesTools } from "./ollama-responses-prepare-tools";
 
 
 export type OllamaResponsesProviderOptions = z.infer<
@@ -44,7 +43,7 @@ interface RequestBuilderResult {
     tools?: any;
     tool_choice?: any;
   };
-  warnings: LanguageModelV2CallWarning[];
+  warnings: SharedV3Warning[];
 }
 
 export class OllamaRequestBuilder {
@@ -120,8 +119,8 @@ export class OllamaRequestBuilder {
     presencePenalty?: number;
     frequencyPenalty?: number;
     stopSequences?: string[];
-  }): LanguageModelV2CallWarning[] {
-    const warnings: LanguageModelV2CallWarning[] = [];
+  }): SharedV3Warning[] {
+    const warnings: SharedV3Warning[] = [];
 
     const unsupportedSettings = [
       { value: topK, name: "topK" },
@@ -133,7 +132,7 @@ export class OllamaRequestBuilder {
 
     for (const { value, name } of unsupportedSettings) {
       if (value != null) {
-        warnings.push({ type: "unsupported-setting", setting: name });
+        warnings.push({ type: "unsupported", feature: "setting", details: name });
       }
     }
 
