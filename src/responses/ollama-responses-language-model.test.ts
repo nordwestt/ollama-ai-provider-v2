@@ -1,12 +1,12 @@
 import { OllamaResponsesLanguageModel } from './ollama-responses-language-model';
 import {
+  TEST_MODEL_ID,
   TEST_PROMPT,
   TEST_TOOLS,
-  TEST_MODEL_ID,
-  createTestConfig,
   createMockServer,
-  prepareJsonResponse,
+  createTestConfig,
   prepareErrorResponse,
+  prepareJsonResponse,
   prepareStreamResponse,
 } from './test-helpers/ollama-test-helpers';
 
@@ -47,7 +47,8 @@ describe('OllamaResponsesLanguageModel', () => {
         expect(result.content).toEqual([
           { type: 'text', text: 'Hello, how can I help you?' },
         ]);
-        expect(result.finishReason).toBe('stop');
+        expect(result.finishReason).toEqual({raw: 'stop', unified: 'stop'}
+        );
         expect(result.usage).toEqual({
           inputTokens: {
             total: 10,
