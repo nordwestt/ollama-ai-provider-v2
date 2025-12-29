@@ -252,7 +252,7 @@ export class OllamaStreamProcessor {
   ) {
     // Ensure any started segments are properly closed
     if (this.state.hasTextStarted && !this.state.textEnded) {
-      controller.enqueue({ type: "text-end", id: "0" });
+      controller.enqueue({ type: "text-end", id: this.state.textId });
     }
     if (this.state.hasReasoningStarted && !this.state.reasoningEnded) {
       controller.enqueue({ type: "reasoning-end", id: "0" });
