@@ -1,7 +1,7 @@
 import {
   LanguageModelV2CallOptions,
-  LanguageModelV2CallWarning,
-  UnsupportedFunctionalityError,
+  SharedV3Warning,
+  UnsupportedFunctionalityError
 } from "@ai-sdk/provider";
 import { OllamaResponsesTool } from "./ollama-responses-api-types";
 
@@ -19,12 +19,13 @@ export function prepareResponsesTools({
     | "required"
     | { type: "web_search_preview" }
     | { type: "function"; name: string };
-  toolWarnings: LanguageModelV2CallWarning[];
+  toolWarnings: SharedV3Warning[];
 } {
+
   // when the tools array is empty, change it to undefined to prevent errors:
   tools = tools?.length ? tools : undefined;
 
-  const toolWarnings: LanguageModelV2CallWarning[] = [];
+  const toolWarnings: SharedV3Warning[] = [];
 
   if (tools == null) {
     return { tools: undefined, toolChoice: undefined, toolWarnings };
@@ -70,7 +71,7 @@ export function prepareResponsesTools({
         break;
       }
       default:
-        toolWarnings.push({ type: "unsupported-tool", tool });
+        toolWarnings.push({ type: "unsupported", feature: "tool", details: tool.name });
         break;
     }
   }

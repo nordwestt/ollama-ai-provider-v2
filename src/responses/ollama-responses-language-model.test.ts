@@ -152,11 +152,11 @@ describe('OllamaResponsesLanguageModel', () => {
         });
 
         expect(result.warnings).toEqual([
-          { type: 'unsupported-setting', setting: 'topK' },
-          { type: 'unsupported-setting', setting: 'seed' },
-          { type: 'unsupported-setting', setting: 'presencePenalty' },
-          { type: 'unsupported-setting', setting: 'frequencyPenalty' },
-          { type: 'unsupported-setting', setting: 'stopSequences' },
+          { type: 'unsupported', feature: 'setting', details: 'topK' },
+          { type: 'unsupported', feature: 'setting', details: 'seed' },
+          { type: 'unsupported', feature: 'setting', details: 'presencePenalty' },
+          { type: 'unsupported', feature: 'setting', details: 'frequencyPenalty' },
+          { type: 'unsupported', feature: 'setting', details: 'stopSequences' },
         ]);
       });
 

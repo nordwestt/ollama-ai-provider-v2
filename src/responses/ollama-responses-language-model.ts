@@ -3,11 +3,11 @@ import {
   LanguageModelV3CallOptions,
   LanguageModelV3Content,
   LanguageModelV3FinishReason,
+  LanguageModelV3ResponseMetadata,
   LanguageModelV3StreamPart,
   LanguageModelV3Usage,
-  SharedV3Warning,
   SharedV3Headers,
-  LanguageModelV3ResponseMetadata,
+  SharedV3Warning,
 } from "@ai-sdk/provider";
 import {
   combineHeaders,
@@ -18,14 +18,14 @@ import { createNdjsonStreamResponseHandler } from "../common/ndjson-stream-handl
 import { OllamaConfig } from "../common/ollama-config";
 import { ollamaFailedResponseHandler } from "../completion/ollama-error";
 import { OllamaChatModelId } from "../ollama-chat-settings";
-import { 
-  OllamaRequestBuilder,
-  OllamaResponsesProviderOptions 
-} from "./ollama-responses-request-builder";
-import { 
-  OllamaResponseProcessor, 
-  baseOllamaResponseSchema 
+import {
+  OllamaResponseProcessor,
+  baseOllamaResponseSchema
 } from "./ollama-responses-processor";
+import {
+  OllamaRequestBuilder,
+  OllamaResponsesProviderOptions
+} from "./ollama-responses-request-builder";
 import { OllamaStreamProcessor } from "./ollama-responses-stream-processor";
 
 export class OllamaResponsesLanguageModel implements LanguageModelV3 {
@@ -134,6 +134,7 @@ export class OllamaResponsesLanguageModel implements LanguageModelV3 {
       ),
       request: { body },
       response: { headers: responseHeaders },
+      warnings: warnings
     };
   }
 

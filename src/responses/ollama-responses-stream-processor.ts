@@ -6,13 +6,13 @@ import {
 } from "@ai-sdk/provider";
 import { generateId, ParseResult } from "@ai-sdk/provider-utils";
 import { z } from "zod/v4";
-import { OllamaConfig } from "../common/ollama-config";
-import { getResponseMetadata } from "../common/get-response-metadata";
 import { mapOllamaFinishReason } from "../adaptors/map-ollama-finish-reason";
+import { getResponseMetadata } from "../common/get-response-metadata";
+import { OllamaConfig } from "../common/ollama-config";
 import {
   baseOllamaResponseSchema,
-  OllamaResponse,
   extractOllamaResponseObjectsFromChunk,
+  OllamaResponse,
 } from "./ollama-responses-processor";
 
 interface StreamState {
@@ -54,7 +54,10 @@ export class OllamaStreamProcessor {
 
   private initializeState(): StreamState {
     return {
-      finishReason: "unknown",
+      finishReason: {
+        unified: "other",
+        raw: undefined
+      },
       usage: {
         inputTokens: {
           total: undefined,
@@ -94,7 +97,7 @@ export class OllamaStreamProcessor {
 
     if (values.length === 0) {
       if (!chunk.success) {
-        this.state.finishReason = "error";
+        this.state.finishReason = {unified: "error", raw: undefined};
         controller.enqueue({ type: "error", error: chunk.error });
       }
       return;
@@ -111,7 +114,7 @@ export class OllamaStreamProcessor {
   ) {
     // Handle error-like chunks
     if ((value as any) && typeof (value as any) === "object" && "error" in (value as any)) {
-      this.state.finishReason = "error";
+      this.state.finishReason = {unified: "error", raw: undefined};
       controller.enqueue({ type: "error", error: (value as any).error });
       return;
     }

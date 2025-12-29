@@ -1,5 +1,6 @@
-import { z } from 'zod/v4';
 import { createJsonErrorResponseHandler, type ResponseHandler } from '@ai-sdk/provider-utils';
+import { APICallError } from 'ai';
+import { z } from 'zod/v4';
 
 export const ollamaErrorDataSchema = z.object({
   error: z.object({
@@ -16,7 +17,7 @@ export const ollamaErrorDataSchema = z.object({
 
 export type OllamaErrorData = z.infer<typeof ollamaErrorDataSchema>;
 
-export const ollamaFailedResponseHandler: ResponseHandler<Response> = createJsonErrorResponseHandler({
+export const ollamaFailedResponseHandler: ResponseHandler<APICallError> = createJsonErrorResponseHandler({
   errorSchema: ollamaErrorDataSchema,
   errorToMessage: data => data.error.message,
 });

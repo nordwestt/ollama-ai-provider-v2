@@ -14,6 +14,7 @@ import {
   combineHeaders,
   createJsonResponseHandler,
   generateId,
+  ParseResult,
   postJsonToApi
 } from "@ai-sdk/provider-utils";
 import { z } from "zod/v4";
@@ -256,12 +257,17 @@ export class OllamaCompletionLanguageModel implements LanguageModelV3 {
     return {
       stream: response.pipeThrough(
         new TransformStream<
-          z.infer<typeof baseOllamaResponseSchema>,
+          ParseResult<z.infer<typeof baseOllamaResponseSchema>>,
           LanguageModelV3StreamPart
         >({
           transform(chunk, controller) {
+
+            if(!chunk.success){
+              controller.enqueue({ type: "error", error: chunk.rawValue });
+              return;
+            }
             
-            const value = chunk;
+            const value = chunk.value;
 
             // handle error chunks:
             if ("error" in value) {

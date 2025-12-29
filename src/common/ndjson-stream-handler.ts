@@ -1,5 +1,5 @@
+import { extractResponseHeaders, ParseResult, ResponseHandler } from '@ai-sdk/provider-utils';
 import { z } from 'zod';
-import { extractResponseHeaders, ResponseHandler } from '@ai-sdk/provider-utils';
 
 /**
  * Creates a response handler for NDJSON (Newline-delimited JSON) streams.
@@ -7,7 +7,7 @@ import { extractResponseHeaders, ResponseHandler } from '@ai-sdk/provider-utils'
  */
 export function createNdjsonStreamResponseHandler<T>(
   schema: z.ZodSchema<T>
-): ResponseHandler<ReadableStream<T>> {
+): ResponseHandler<ReadableStream<ParseResult<T>>> {
   return async ({ response }) => {
     const responseHeaders = extractResponseHeaders(response);
 
@@ -19,7 +19,7 @@ export function createNdjsonStreamResponseHandler<T>(
     const decoder = new TextDecoder();
     let buffer = '';
 
-    const stream = new ReadableStream<T>({
+    const stream = new ReadableStream<ParseResult<T>>({
       async pull(controller) {
         while (true) {
           const { done, value } = await reader.read();
@@ -30,7 +30,7 @@ export function createNdjsonStreamResponseHandler<T>(
               try {
                 const parsed = JSON.parse(buffer.trim());
                 const validated = schema.parse(parsed);
-                controller.enqueue(validated);
+                controller.enqueue({success: true, value: validated, rawValue: validated});
               } catch {
                 // Ignore parse errors for incomplete data at end
               }
@@ -49,7 +49,7 @@ export function createNdjsonStreamResponseHandler<T>(
               try {
                 const parsed = JSON.parse(trimmedLine);
                 const validated = schema.parse(parsed);
-                controller.enqueue(validated);
+                controller.enqueue({success:true, value: validated, rawValue: validated});
               } catch (error) {
                 // Skip invalid JSON lines
                 console.warn('Failed to parse NDJSON line:', error);
