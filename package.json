@@ -37,7 +37,7 @@
     }
   },
   "dependencies": {
-    "@ai-sdk/provider": "^3.0.0",
+    "@ai-sdk/provider": "^3.0.1",
     "@ai-sdk/provider-utils": "^4.0.1"
   },
   "devDependencies": {
