@@ -1,5 +1,5 @@
+import { APICallError } from '@ai-sdk/provider';
 import { createJsonErrorResponseHandler, type ResponseHandler } from '@ai-sdk/provider-utils';
-import { APICallError } from 'ai';
 import { z } from 'zod/v4';
 
 export const ollamaErrorDataSchema = z.object({

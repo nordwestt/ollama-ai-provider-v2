@@ -20,6 +20,7 @@ import { ollamaFailedResponseHandler } from "../completion/ollama-error";
 import { OllamaChatModelId } from "../ollama-chat-settings";
 import {
   OllamaResponseProcessor,
+  OllamaResponse,
   baseOllamaResponseSchema
 } from "./ollama-responses-processor";
 import {
@@ -79,13 +80,13 @@ export class OllamaResponsesLanguageModel implements LanguageModelV3 {
       }),
       headers: combineHeaders(this.config.headers(), options.headers),
       body: { ...body, stream: false },
-      failedResponseHandler: ollamaFailedResponseHandler,
+      failedResponseHandler: ollamaFailedResponseHandler as any,
       successfulResponseHandler: createJsonResponseHandler(baseOllamaResponseSchema),
       abortSignal: options.abortSignal,
       fetch: this.config.fetch,
     });
 
-    const processedResponse = this.responseProcessor.processGenerateResponse(response);
+    const processedResponse = this.responseProcessor.processGenerateResponse(response as OllamaResponse);
 
     return {
       ...processedResponse,
@@ -120,7 +121,7 @@ export class OllamaResponsesLanguageModel implements LanguageModelV3 {
       }),
       headers: combineHeaders(this.config.headers(), options.headers),
       body: { ...body, stream: true },
-      failedResponseHandler: ollamaFailedResponseHandler,
+      failedResponseHandler: ollamaFailedResponseHandler as any,
       successfulResponseHandler: createNdjsonStreamResponseHandler(baseOllamaResponseSchema),
       abortSignal: options.abortSignal,
       fetch: this.config.fetch,
