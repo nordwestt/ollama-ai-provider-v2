@@ -45,7 +45,7 @@
     "@types/node": "25.2.2",
     "@vercel/ai-tsconfig": "./tsconfig",
     "ai": "^6.0.67",
-    "eslint": "^9.39.2",
+    "eslint": "^10.0.0",
     "msw": "^2.12.7",
     "tsup": "^8",
     "typescript": "5.9.3",
