@@ -42,7 +42,7 @@
   },
   "devDependencies": {
     "@edge-runtime/vm": "^5.0.0",
-    "@types/node": "25.3.3",
+    "@types/node": "25.3.5",
     "@vercel/ai-tsconfig": "./tsconfig",
     "ai": "^6.0.105",
     "eslint": "^10.0.2",
