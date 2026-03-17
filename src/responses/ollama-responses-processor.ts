@@ -52,7 +52,11 @@ export class OllamaResponseProcessor {
     providerMetadata: SharedV3ProviderMetadata;
   } {
     const content = this.extractContent(response);
-    const finishReason = mapOllamaFinishReason(response.done_reason);
+    const hasToolCalls = content.some(item => item.type === "tool-call");
+    const rawFinishReason = mapOllamaFinishReason(response.done_reason);
+    const finishReason: LanguageModelV3FinishReason = hasToolCalls && rawFinishReason.unified !== "tool-calls"
+      ? { unified: "tool-calls", raw: "tool_calls" }
+      : rawFinishReason;
     const usage = this.extractUsage(response);
     const providerMetadata: SharedV3ProviderMetadata = { ollama: {} };
 

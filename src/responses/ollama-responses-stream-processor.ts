@@ -275,9 +275,14 @@ export class OllamaStreamProcessor {
       controller.enqueue({ type: "reasoning-end", id: this.state.reasoningId });
     }
 
+    const correctedFinishReason: LanguageModelV3FinishReason =
+      this.state.hasToolCalls && this.state.finishReason.unified !== "tool-calls"
+        ? { unified: "tool-calls", raw: "tool_calls" }
+        : this.state.finishReason;
+
     controller.enqueue({
       type: "finish",
-      finishReason: this.state.finishReason,
+      finishReason: correctedFinishReason,
       usage: this.state.usage,
       providerMetadata: {
         ollama: {
