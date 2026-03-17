@@ -46,7 +46,7 @@
     "@vercel/ai-tsconfig": "./tsconfig",
     "ai": "^6.0.116",
     "eslint": "^10.0.3",
-    "msw": "^2.12.10",
+    "msw": "^2.12.13",
     "tsup": "^8",
     "typescript": "5.9.3",
     "vite": "^7.3.1",
